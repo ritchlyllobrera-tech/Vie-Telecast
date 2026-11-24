@@ -29,7 +29,7 @@ const CK = "vtc_user";
 const LOCAL = ["edit", "monSound", "monVid", "sfx", "sfxVol"];
 // what is playing / on screen. An Editor runs their own flow with these on their own computer;
 // only the Director's copy is the program that the Live screens show.
-const PLAY = ["cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "scene", "bgId", "spot", "spotTs", "raffle", "sfx", "sfxVol"];
+const PLAY = ["cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "scene", "bgId", "spot", "spotTs", "spotList", "raffle", "sfx", "sfxVol"];
 const ROLE = { director: "🎬 Director", editor: "✏ Editor", screen: "📺 Live screen" };
 
 // samePc: this browser runs on the computer that runs the server (it can switch to http://localhost)

@@ -50,6 +50,7 @@ const DEF = {
   pool: "",
   winners: [],
   spot: -1,
+  spotList: null, // { award, page, ts }: the Live Screen lists an award's awardees, PER names per page
   raffle: null,
   segStart: Date.now(),
   t0: Date.now(),
@@ -59,6 +60,8 @@ const DEF = {
 // the venues of the show. Each person signs in at one; a segment can belong to one ("" = all locations)
 const LOCS = { cebu: "Cebu City", ncr: "NCR Makati", cdo: "CDO Mindanao" };
 // medal for an employee award (optional: "" = no medal)
+// names per page when an award's awardees are listed on the Live Screen (the list option shows above this many)
+const PER = 8;
 const MEDAL = { gold: ["🥇", "Gold"], silver: ["🥈", "Silver"], bronze: ["🥉", "Bronze"] };
 const MB = (b) => (b / 1048576).toFixed(1) + " MB";
 const fm = (t) => Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
@@ -112,4 +115,4 @@ const meetPlat = (s) => {
   return "";
 };
 
-export { LOGO, BG0, RAFM, K, $, esc, SEGS, SCENES, AUTO, DEF, LOCS, MEDAL, MB, fm, fmt, WP, norm, meetLink, meetPlat };
+export { LOGO, BG0, RAFM, K, $, esc, SEGS, SCENES, AUTO, DEF, LOCS, MEDAL, PER, MB, fm, fmt, WP, norm, meetLink, meetPlat };

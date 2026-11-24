@@ -223,6 +223,7 @@ function doAct(a) {
     S.raffle = null;
   } else if (a === "closeAward") {
     S.spot = -1;
+    S.spotList = null;
   }
   save();
 }

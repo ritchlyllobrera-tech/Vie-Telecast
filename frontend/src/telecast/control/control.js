@@ -239,6 +239,7 @@ function buildControl(r) {
   });
   B("#aoff", () => {
     S.spot = -1;
+    S.spotList = null;
     save();
   });
   B("#anx", nextAward);
@@ -250,6 +251,7 @@ function buildControl(r) {
     if (confirm("Delete all awards?")) {
       S.awards = [];
       S.spot = -1;
+      S.spotList = null;
       save();
     }
   });

@@ -13,6 +13,7 @@ function setSeg(i) {
   S.pausedLeft = null;
   S.segStart = now();
   S.spot = -1;
+  S.spotList = null;
   S.bgId = "";
   if (!S.started) {
     S.started = 1;
