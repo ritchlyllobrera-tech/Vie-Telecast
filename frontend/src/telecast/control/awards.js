@@ -1,5 +1,5 @@
 /** Employee awards list (card 6): awardees in one folder per award; click an awardee to put them on the Live Screen. */
-import { $, esc, MEDAL } from "../constants.js";
+import { $, esc, MEDAL, PER } from "../constants.js";
 import { S } from "../state.js";
 import { save } from "../sync.js";
 import { now } from "../clock.js";
@@ -28,6 +28,7 @@ function folders() {
 /** put award `i` on the Live Screen (-1 = hide) */
 function show(i) {
   S.spot = i;
+  S.spotList = null;
   if (i >= 0) S.spotTs = now();
   save();
 }
@@ -40,15 +41,40 @@ export function nextAward() {
   show(order[Math.min(order.length - 1, at + 1)]);
 }
 
+/** list the awardees of award `name` on the Live Screen, page `page` (PER names each) */
+function showList(name, page) {
+  S.spot = -1;
+  S.spotList = { award: name, page, ts: now() };
+  save();
+}
+
+/** buttons for showing all of a folder's names, PER at a time (only for folders with more than PER awardees) */
+function listBtns(f, fi) {
+  if (f.idx.length <= PER) return "";
+  const pages = Math.ceil(f.idx.length / PER),
+    L = S.spotList && S.spotList.award === f.name ? S.spotList : null;
+  if (!L) return `<button data-lst="${fi}" title="Show all of this award's awardees on the Live Screen, ${PER} names at a time; Next shows the rest">📋 Show all names</button>`;
+  const pg = Math.min(L.page, pages - 1),
+    from = pg * PER + 1,
+    to = Math.min(f.idx.length, from + PER - 1);
+  return (
+    `<span class="onair" title="Names ${from} to ${to} of ${f.idx.length} are on the Live Screen">● ${from}–${to} of ${f.idx.length}</span>` +
+    `<button data-lprev="${fi}" ${pg ? "" : "disabled"} title="Show the previous ${PER} names">◀ Back</button>` +
+    (pg < pages - 1
+      ? `<button class="p" data-lnext="${fi}" title="Show the next ${PER} names">Next ${PER} ▶</button>`
+      : `<button class="p" data-ldone="${fi}" title="That was the last page: hide the list">✔ Done</button>`)
+  );
+}
+
 export function renderAwards(r) {
   const al = $(r, "#al"),
     F = folders(),
     H =
       F.map((f, fi) => {
         const open = !shut.has(f.name),
-          on = f.idx.includes(S.spot);
+          on = f.idx.includes(S.spot) || !!(S.spotList && S.spotList.award === f.name);
         return (
-          `<div class="awf${on ? " on" : ""}"><div class="awh"><button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}</button><button data-fnext="${fi}" title="Show the next awardee of this award (the first one if none of them is on screen)">▶ Next in folder</button></div>` +
+          `<div class="awf${on ? " on" : ""}"><div class="awh"><button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}</button><button data-fnext="${fi}" title="Show the next awardee of this award, one by one (the first one if none of them is on screen)">▶ Next in folder</button>${listBtns(f, fi)}</div>` +
           (open
             ? f.idx
                 .map((i, n) => {
@@ -87,6 +113,31 @@ export function renderAwards(r) {
         at = idx.indexOf(S.spot);
       shut.delete(F[+b.dataset.fnext].name);
       show(idx[Math.min(idx.length - 1, at + 1)]);
+    };
+  });
+  const page = (b, d) => {
+    const f = F[+b.dataset[d]],
+      pages = Math.ceil(f.idx.length / PER),
+      L = S.spotList && S.spotList.award === f.name ? S.spotList : null;
+    return { f, pages, pg: L ? Math.min(L.page, pages - 1) : -1 };
+  };
+  B("[data-lst]", (b) => (b.onclick = () => showList(F[+b.dataset.lst].name, 0)));
+  B("[data-lnext]", (b) => {
+    b.onclick = () => {
+      const { f, pages, pg } = page(b, "lnext");
+      showList(f.name, Math.min(pages - 1, pg + 1));
+    };
+  });
+  B("[data-lprev]", (b) => {
+    b.onclick = () => {
+      const { f, pg } = page(b, "lprev");
+      showList(f.name, Math.max(0, pg - 1));
+    };
+  });
+  B("[data-ldone]", (b) => {
+    b.onclick = () => {
+      S.spotList = null;
+      save();
     };
   });
   B("[data-show]", (row) => {

@@ -1,5 +1,5 @@
 /** The 16:9 broadcast stage (used by both the monitor and the live screen): background, snow, panels, ticker, awards. */
-import { LOGO, BG0, MEDAL, $, esc, fmt, meetLink } from "../constants.js";
+import { LOGO, BG0, MEDAL, PER, $, esc, fmt, meetLink } from "../constants.js";
 import { S, dedupe, segLeft, ytOn } from "../state.js";
 import { act, LIVE, MINE } from "../sync.js";
 import { url } from "../media.js";
@@ -553,6 +553,47 @@ function updateStage(el, own) {
         '</div><i class="sp" style="left:6%;top:14%">\u2726</i><i class="sp" style="right:7%;top:20%;animation-delay:.7s">\u2727</i><i class="sp" style="left:12%;bottom:16%;animation-delay:1.1s">\u2727</i><i class="sp" style="right:10%;bottom:12%;animation-delay:.3s">\u2726</i></div>';
       aw.firstChild.style.setProperty("--d", -(Date.now() % 4000) / 1000 + "s");
       if (now() - (S.spotTs || 0) < 2000) confetti(el, S.spotTs);
+    }
+  } else if (S.spotList && S.awards.some((x) => (x.award || "Award") === S.spotList.award)) {
+    // an award's awardees, PER names per page
+    const L = S.spotList,
+      all = S.awards.filter((x) => (x.award || "Award") === L.award),
+      pages = Math.ceil(all.length / PER),
+      pg = Math.max(0, Math.min(L.page || 0, pages - 1)),
+      names = all.slice(pg * PER, pg * PER + PER),
+      key = "L|" + L.award + "|" + pg + "|" + names.map((x) => x.name + ":" + (x.medal || "")).join(",");
+    aw.style.display = "flex";
+    if (el._ak !== key) {
+      el._ak = key;
+      const long = Math.max(...names.map((x) => x.name.length), 1),
+        fs = Math.max(1.5, Math.min(2.6, 46 / long));
+      aw.innerHTML =
+        '<div class="ac ice al"><i class="fr"></i><i class="ic"></i>' +
+        FE +
+        '<i class="fg"></i><button class="xb" data-a="closeAward">✕ Close</button>' +
+        '<div class="at">' +
+        esc(L.award) +
+        '</div><ol class="anl" start="' +
+        (pg * PER + 1) +
+        '" style="font-size:' +
+        fs +
+        'cqw">' +
+        names
+          .map(
+            (x, n) =>
+              '<li style="animation-delay:' +
+              (0.35 + n * 0.12) +
+              's"><span>' +
+              (MEDAL[x.medal] ? MEDAL[x.medal][0] + " " : "") +
+              esc(x.name) +
+              "</span></li>",
+          )
+          .join("") +
+        "</ol>" +
+        (pages > 1 ? '<div class="apg">' + (pg + 1) + " / " + pages + "</div>" : "") +
+        '<i class="sp" style="left:6%;top:14%">✦</i><i class="sp" style="right:7%;top:20%;animation-delay:.7s">✧</i></div>';
+      aw.firstChild.style.setProperty("--d", -(Date.now() % 4000) / 1000 + "s");
+      if (now() - (L.ts || 0) < 2000) confetti(el, L.ts);
     }
   } else {
     aw.style.display = "none";
