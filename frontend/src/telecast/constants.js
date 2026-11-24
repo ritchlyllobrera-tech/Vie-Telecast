@@ -26,8 +26,6 @@ const SCENES = {
   "segment-video": "Segment Video",
   "spin-wheel": "Spin the Wheel",
 };
-// scene per built-in segment, by id (not position, so inserting a segment does not shift them)
-const AUTO = { "seg-2": "opening-video", "seg-6": "ceo-video", "seg-9": "spin-wheel" };
 const DEF = {
   seg: 0,
   edit: 0,
@@ -111,5 +109,21 @@ const meetPlat = (s) => {
   if (/(^|\.)zoom\.(us|com)$/.test(h)) return "zoom";
   return "";
 };
+/** YouTube video id from watch?v= / youtu.be / live / embed / shorts links, or a bare 11-character id ("" if none). */
+const ytId = (s) => {
+  const t = String(s || "").trim();
+  if (/^[\w-]{11}$/.test(t)) return t;
+  const u = meetLink(t);
+  if (!u) return "";
+  const x = new URL(u),
+    h = x.hostname.toLowerCase(),
+    ok = (v) => (/^[\w-]{11}$/.test(v || "") ? v : "");
+  if (h === "youtu.be") return ok(x.pathname.split("/")[1]);
+  if (/(^|\.)youtube(-nocookie)?\.com$/.test(h)) {
+    const m = x.pathname.match(/^\/(?:live|embed|shorts|v)\/([^/?#]+)/);
+    return m ? ok(m[1]) : ok(x.searchParams.get("v"));
+  }
+  return "";
+};
 
-export { LOGO, BG0, RAFM, K, $, esc, SEGS, SCENES, AUTO, DEF, LOCS, MEDAL, MB, fm, fmt, WP, norm, meetLink, meetPlat };
+export { LOGO, BG0, RAFM, K, $, esc, SEGS, SCENES, DEF, LOCS, MEDAL, MB, fm, fmt, WP, norm, meetLink, meetPlat, ytId };

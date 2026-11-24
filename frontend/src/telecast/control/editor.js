@@ -1,19 +1,26 @@
 /** Segment editor (card 3): details, plus music / videos / photos picked from the Media library. */
-import { $, esc, MB, LOCS, meetLink, meetPlat } from "../constants.js";
+import { $, esc, MB, LOCS, meetLink, meetPlat, ytId } from "../constants.js";
 import { NET, canControl, canEditSeg, myLoc } from "../net.js";
-import { S } from "../state.js";
+import { S, segYt } from "../state.js";
 import { ownOut, quiet, save } from "../sync.js";
 import { url } from "../media.js";
 import { updateStage } from "../stage/stage.js";
-import { cmd } from "../actions.js";
+import { cmd, setAll } from "../actions.js";
 import { renderRundown, delSeg } from "./rundown.js";
 import { libItems, libItem } from "./library.js";
 import { xon } from "./select.js";
+import { render } from "../render.js";
 
 const MAX_IMG = 6;
 const PLAT = { teams: "Microsoft Teams", meet: "Google Meet", zoom: "Zoom", other: "Other meeting" };
 const bare = (name) => name.replace(/\.[^.]+$/, "");
 /** the line under the meeting link: is it a link the Director can open? */
+const ytHint = (s) =>
+  !String(s || "").trim()
+    ? ""
+    : ytId(s)
+      ? `<span class="okc">✔ YouTube Live link</span>`
+      : `<span class="err">✖ Not a YouTube link. Paste the watch / youtu.be / live link of the unlisted live stream.</span>`;
 const linkHint = (s) => {
   if (!String(s || "").trim()) return "";
   const u = meetLink(s);
@@ -26,7 +33,7 @@ const linkHint = (s) => {
  * "All locations". Controls that change another location's segment are disabled for an Editor
  * (playing / previewing stays allowed: that is their own private flow).
  */
-const LOCKED = "[data-f],[data-cf],[data-mv],[data-rm],[data-open],[data-segdel]";
+const LOCKED = "[data-f],[data-cf],[data-yt],[data-allf],[data-drag],[data-mv],[data-rm],[data-open],[data-segdel]";
 function locRow(g) {
   if (!NET.on) return ""; // working alone: locations don't matter
   const mine = myLoc(),
@@ -74,6 +81,14 @@ function picker(g, kind, label, room) {
 const tools = (kind, id, i, n) =>
   `<button data-mv="${kind}|${id}|-1" ${i ? "" : "disabled"} title="Move up">▲</button><button data-mv="${kind}|${id}|1" ${i < n - 1 ? "" : "disabled"} title="Move down">▼</button><button class="d xs" data-rm="${kind}|${id}" title="Remove from this segment (stays in the library)">✕</button>`;
 
+/** The segment settings drawer (the editor lives in a slide-in panel next to the rundown). */
+const curPanel = () => document.body.dataset.panel || "";
+const openPanel = (p) => {
+  document.body.dataset.panel = p || "";
+  document.dispatchEvent(new Event("vtc-panel")); // the control page syncs the title and the rail
+};
+const setDrawer = (on) => openPanel(on ? "ed" : "");
+const drawerOpen = () => !!curPanel();
 function renderEditor(r) {
   const g = S.segs[S.edit],
     items = (k) => g[k].map(libItem).filter(Boolean),
@@ -81,19 +96,25 @@ function renderEditor(r) {
     au = items("aud"),
     vi = items("vid");
   const ed = $(r, "#ed"),
-    H = `<div class="row"><b>Segment ${S.edit + 1}</b>${g.editedBy ? `<span class="mut">✏ last edited by ${esc(g.editedBy)}${LOCS[g.editedLoc] ? " (" + esc(LOCS[g.editedLoc]) + ")" : ""} at ${new Date(g.editedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>` : ""}<span class="g"></span><button class="d" data-segdel="1" ${S.segs.length <= 1 || (S.edit === S.seg && S.started) ? `disabled title="${S.segs.length <= 1 ? "The rundown needs at least one segment" : "This segment is on air. Move to another segment first."}"` : 'title="Delete this segment from the rundown"'}>🗑 Delete segment</button></div>${locRow(g)}<input class="g" style="width:100%" data-f="title" value="${esc(g.title)}" placeholder="Title"><textarea data-f="desc" placeholder="Description (shown on the live screen)">${esc(g.desc)}</textarea>
+    H = `<div class="row"><b>Segment ${S.edit + 1}</b>${g.editedBy ? `<span class="mut">✏ last edited by ${esc(g.editedBy)}${LOCS[g.editedLoc] ? " (" + esc(LOCS[g.editedLoc]) + ")" : ""} at ${new Date(g.editedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>` : ""}</div>${locRow(g)}<input class="g" style="width:100%" data-f="title" value="${esc(g.title)}" placeholder="Title"><textarea data-f="desc" placeholder="Description (shown on the live screen)">${esc(g.desc)}</textarea>
  <div class="row"><label class="mut">Start time <input type="time" data-f="time" value="${g.time}"></label><label class="mut">Duration <input class="num" type="number" min="0" step="0.01" data-f="min" value="${g.min}"> min</label></div>
+ <h2 style="margin-top:10px">📡 All sites</h2>
+ <div class="row"><label class="mut"><input type="checkbox" data-allf="1" ${g.all ? "checked" : ""} ${canControl() && NET.on ? "" : "disabled"}> Play this segment on <b>every site</b> (Cebu and all Editor screens) when the Director presses ▶. Off: only Cebu.</label></div>
+ <h2 style="margin-top:10px">📺 YouTube Live (unlisted)</h2>
+ <div class="row"><input class="g" data-yt="1" placeholder="Paste the YouTube Live link (https://www.youtube.com/watch?v=…)" value="${esc(g.yt || (g.call?.platform === "youtube" ? g.call.link : "") || "")}"></div>
+ <div class="mut" data-yh>${ytHint(g.yt || (g.call?.platform === "youtube" ? g.call.link : ""))}</div>
+ <div class="mut">When this segment goes live (▶), every Live Screen plays the YouTube stream by itself in the video area. Moving to another segment stops it. The videos below stay as a backup.</div>
+ <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${m.id}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button class="p" data-pv="${m.id}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
+ <div class="row">${picker(g, "vid", "Add videos from library", Infinity)}</div>
+ <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${m.id}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button data-pa="${m.id}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
+ <div class="row">${picker(g, "aud", "Add songs from library", Infinity)}</div>
+ <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${m.id}"><img data-u="${m.id}" data-bg="${m.id}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${m.id}" title="Remove from this segment">✕</button></span>`).join("")}
+ <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
  <h2 style="margin-top:10px">Autoplay &amp; timing</h2>
  <div class="row"><label class="mut"><input type="checkbox" data-f="am" ${g.am !== false ? "checked" : ""}> 🎵 Auto-play its music when this segment starts</label></div>
  <div class="row"><label class="mut"><input type="checkbox" data-f="av" ${g.av ? "checked" : ""}> 🎬 Auto-play its first video when this segment starts</label></div>
  <div class="row"><label class="mut">⏰ When its time is up <select data-f="endAct"><option value="ask" ${g.endAct !== "next" ? "selected" : ""}>Ask me with a pop-up</option><option value="next" ${g.endAct === "next" ? "selected" : ""}>Go to the next segment automatically</option></select></label></div>
  <div class="row"><label class="mut"><input type="checkbox" data-f="an" ${g.an ? "checked" : ""}> ⏭ When its video or music finishes, go to the next segment automatically</label></div>
- <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${m.id}"><img data-u="${m.id}" data-bg="${m.id}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${m.id}" title="Remove from this segment">✕</button></span>`).join("")}
- <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
- <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${m.id}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button data-pa="${m.id}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
- <div class="row">${picker(g, "aud", "Add songs from library", Infinity)}</div>
- <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${m.id}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button class="p" data-pv="${m.id}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
- <div class="row">${picker(g, "vid", "Add videos from library", Infinity)}</div>
  <h2 style="margin-top:10px">📞 Live call (Teams / Google Meet / Zoom)</h2>
  <div class="row"><select data-cf="platform">${Object.entries(PLAT)
    .map(([k, v]) => `<option value="${k}" ${(g.call?.platform || "teams") === k ? "selected" : ""}>${v}</option>`)
@@ -101,7 +122,8 @@ function renderEditor(r) {
      "",
    )}</select><input class="g" data-cf="link" placeholder="Paste the meeting link (https://…)" value="${esc(g.call?.link || "")}"></div>
  <div class="mut" data-lh>${linkHint(g.call?.link)}</div>
- <div class="mut">For a live speech (e.g. the CEO): when this segment is on air, the Director opens the meeting in a Chrome / Edge tab and presses “📡 Share call to Live Screens”. Every location sees and hears it.</div>`;
+ <div class="mut">For a live speech (e.g. the CEO): when this segment is on air, the Director opens the meeting in a Chrome / Edge tab and presses “📡 Share call to Live Screens”. Every location sees and hears it.</div> <h2 style="margin-top:10px">Delete</h2>
+ <div class="row"><button class="d" data-segdel="1" ${S.segs.length <= 1 || (S.edit === S.seg && S.started) ? `disabled title="${S.segs.length <= 1 ? "The rundown needs at least one segment" : "This segment is on air. Move to another segment first."}"` : 'title="Delete this segment from the rundown"'}>🗑 Delete segment</button></div>`;
   if (ed._h !== H) {
     const sc = ed.querySelector(".pickl")?.scrollTop || 0;
     ed._h = H;
@@ -132,6 +154,29 @@ function renderEditor(r) {
           delSeg(S.edit);
       };
   }
+  ed.querySelectorAll("[data-yt]").forEach((x) => {
+    x.oninput = x.onchange = () => {
+      const g = S.segs[S.edit],
+        had = !!segYt(g);
+      g.yt = x.value.trim();
+      if (!had && segYt(g) && g.all === undefined && canControl() && NET.on) g.all = true; // a live segment goes to all sites unless the Director turns it off
+      const cb = ed.querySelector("[data-allf]");
+      if (cb) cb.checked = !!g.all; // (the editor is not redrawn while this field has the focus)
+      if (g.call && g.call.platform === "youtube") g.call = { ...g.call, platform: "teams", link: "" }; // the old entry is now this field
+      const h = ed.querySelector("[data-yh]");
+      if (h) h.innerHTML = ytHint(g.yt);
+      quiet();
+      renderRundown(r);
+      render();
+    };
+  });
+  ed.querySelectorAll("[data-allf]").forEach(
+    (x) =>
+      (x.onchange = () => {
+        setAll(S.edit, x.checked);
+        renderRundown(r);
+      }),
+  );
   ed.querySelectorAll("[data-cf]").forEach((x) => {
     x.oninput = x.onchange = () => {
       const g = S.segs[S.edit];
@@ -144,11 +189,12 @@ function renderEditor(r) {
           const sel = ed.querySelector('[data-cf="platform"]');
           if (sel) sel.value = p;
         }
-        const h = ed.querySelector("[data-lh]");
-        if (h) h.innerHTML = linkHint(g.call.link);
       }
+      const h = ed.querySelector("[data-lh]");
+      if (h) h.innerHTML = linkHint(g.call.link);
       quiet();
       r.querySelector("#callbar")._h = null;
+      render(); // the call bar (Share / Show YouTube button) follows the platform and link
     };
   });
   // multi-select picker
@@ -253,4 +299,4 @@ function renderEditor(r) {
   ed.querySelectorAll("[data-st]").forEach((b) => (b.onclick = () => cmd("aud", "stop")));
 }
 
-export { renderEditor };
+export { renderEditor, setDrawer, drawerOpen, openPanel, curPanel };

@@ -1,11 +1,16 @@
 /** Show actions: go to a segment, send a playback command, spin the raffle. */
-import { AUTO } from "./constants.js";
-import { S, dedupe } from "./state.js";
+import { S, dedupe, segYt } from "./state.js";
 import { save } from "./sync.js";
 import { startRaf, rafOn } from "./playback.js";
 import { now } from "./clock.js";
+import { NET, canControl } from "./net.js";
 
-/* actions */
+/**
+ * The scene a segment starts in, derived from the segment itself (not from its id, which changes when the rundown is
+ * reordered or renamed): YouTube Live link -> live feed, raffle / wheel segment -> wheel, video that autoplays -> segment video.
+ * ("Opening Video" stays a manual scene button: it only differs from "Segment Video" by its caption.)
+ */
+const sceneFor = (g) => (segYt(g) ? "live-feed" : g.wheel ? "spin-wheel" : g.av && g.vid[0] ? "segment-video" : "standby");
 function setSeg(i) {
   const g = S.segs[i];
   S.seg = S.edit = i;
@@ -18,8 +23,17 @@ function setSeg(i) {
     S.started = 1;
     S.t0 = now();
   }
-  if (S.auto) S.scene = AUTO[g.id] && AUTO[g.id] !== "spin-wheel" ? AUTO[g.id] : "standby";
-  {
+  if (S.auto) S.scene = sceneFor(g);
+  S.yt = null;
+  S.ytStop = null;
+  // the Director's segment decides: "📡 All sites" on = every Editor output shows the program, off = back to their own show
+  if (canControl()) S.bc = g.all && NET.on ? { seg: g.id, title: g.title, ts: Date.now() } : null;
+  if (segYt(g)) {
+    // a segment with a YouTube Live link plays it on every screen; it wins over the video autoplay (and silences the music)
+    S.yt = { id: segYt(g), seg: g.id, ts: Date.now() };
+    S.scene = "live-feed";
+    if (S.cmd && S.cmd.action !== "stop") S.cmd = { ts: Date.now(), kind: "aud", action: "stop", ids: [] };
+  } else {
     const A = [...g.aud],
       V = g.vid[0],
       ts = Date.now();
@@ -32,6 +46,34 @@ function setSeg(i) {
   }
   save();
 }
+/** Director: switch "📡 All sites" for segment i. On the segment that is on air it starts / ends the broadcast right away. */
+function setAll(i, on) {
+  const g = S.segs[i];
+  if (!g || !canControl()) return;
+  g.all = !!on;
+  if (i === S.seg && S.started) S.bc = on && NET.on ? { seg: g.id, title: g.title, ts: Date.now() } : null;
+  save();
+}
+function endBc() {
+  S.bc = null;
+  save();
+}
+/** Director: play / stop the YouTube Live of the segment on air. */
+function playYt() {
+  const g = S.segs[S.seg],
+    id = segYt(g);
+  if (!id) return;
+  S.yt = { id, seg: g.id, ts: Date.now() };
+  S.ytStop = null;
+  S.scene = "live-feed";
+  save();
+}
+function stopYt() {
+  S.yt = null;
+  S.ytStop = (S.segs[S.seg] || {}).id || null; // stopped on purpose: the bar offers "Resume"
+  if (S.scene === "live-feed") S.scene = "standby";
+  save();
+}
 /** start = index in `ids` to begin with (▶ on one song plays the rest of the playlist from there) */
 const cmd = (kind, action, ids, start) => {
   if (action === "toggle" && S.cmd && S.cmd.kind === kind && S.cmd.action !== "stop") {
@@ -41,7 +83,10 @@ const cmd = (kind, action, ids, start) => {
     return;
   }
   S.cmd = { ts: Date.now(), kind, action, ids: ids || [], seg: S.segs[S.edit].id, start: start || 0 };
-  if (action === "play" && kind === "vid") S.scene = "segment-video";
+  if (action === "play" && kind === "vid") {
+    S.scene = "segment-video";
+    S.yt = null; // the recorded video replaces YouTube Live
+  }
   if (action === "stop" && S.scene === "segment-video") S.scene = "standby";
   save();
 };
@@ -58,6 +103,7 @@ function spin() {
   S.winners.push({ name: w, prize: pz });
   S.raffle = { names: n, winner: w, spinId: now(), prize: pz, round: S.winners.length, dur };
   S.scene = "spin-wheel";
+  S.yt = null;
   if (!rafOn()) startRaf();
   S.pool = n.filter((x) => x !== w).join("\n");
   save();
@@ -107,4 +153,4 @@ const stopSfx = () => {
   save();
 };
 
-export { setSeg, cmd, spin, playSfx, stopSfx, pauseShow, resumeShow, restartShow, holdOnOpen };
+export { setSeg, cmd, setAll, endBc, playYt, stopYt, spin, playSfx, stopSfx, pauseShow, resumeShow, restartShow, holdOnOpen };

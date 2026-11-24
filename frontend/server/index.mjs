@@ -274,6 +274,26 @@ wss.on("connection", (ws) => {
         everyone({ t: "state", S });
         break;
       }
+      case "seg-order": {
+        // segments dragged to a new order: a permutation of the same ids. An Editor may not change the relative order of
+        // segments of other locations (only move their own); the segment on air keeps being on air.
+        if (me.role === "screen" || !S || !Array.isArray(m.ids)) return;
+        const cur = S.segs.map((g) => g.id),
+          byId = new Map(S.segs.map((g) => [g.id, g]));
+        const ok =
+          m.ids.length === cur.length &&
+          new Set(m.ids).size === cur.length &&
+          m.ids.every((id) => byId.has(id)) &&
+          m.ids.filter((id) => !mayEdit(me, byId.get(id))).join() === cur.filter((id) => !mayEdit(me, byId.get(id))).join();
+        if (!ok) return send(ws, { t: "state", S });
+        const onAir = (S.segs[S.seg || 0] || {}).id;
+        S.segs = m.ids.map((id) => byId.get(id));
+        S.seg = Math.max(0, S.segs.findIndex((g) => g.id === onAir));
+        S.savedAt = Date.now();
+        persist();
+        everyone({ t: "state", S });
+        break;
+      }
       case "seg-del": {
         if (me.role === "screen" || !S) return;
         const i = S.segs.findIndex((g) => g.id === m.id);
