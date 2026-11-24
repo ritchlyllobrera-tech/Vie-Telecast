@@ -50,12 +50,12 @@ export function renderLibrary(r) {
     .map((m) => {
       const n = usage(m.id),
         used = " · " + (n ? "used in " + n + " segment" + (n > 1 ? "s" : "") : "not used yet"),
-        thumb = m.kind === "img" ? `<img class="lth" data-lu="${m.id}" alt="">` : KINDS[m.kind].icon,
+        thumb = m.kind === "img" ? `<img class="lth" data-lu="${esc(m.id)}" alt="">` : KINDS[m.kind].icon,
         listen =
           m.kind === "aud"
-            ? `<button data-lpv="${m.id}" title="Listen on this computer only">${preview && preview.id === m.id ? "⏹" : "🎧"}</button>`
+            ? `<button data-lpv="${esc(m.id)}" title="Listen on this computer only">${preview && preview.id === m.id ? "⏹" : "🎧"}</button>`
             : "";
-      return `<div class="row seg${xon("lib:" + m.id)}" data-sel="lib:${m.id}">${thumb}<span class="g">${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}${used}</span></span>${listen}<button class="d xs" data-ldel="${m.id}" title="Delete from the library">✕</button></div>`;
+      return `<div class="row seg${xon("lib:" + m.id)}" data-sel="lib:${esc(m.id)}">${thumb}<span class="g">${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}${used}</span></span>${listen}<button class="d xs" data-ldel="${esc(m.id)}" title="Delete from the library">✕</button></div>`;
     })
     .join("");
   const H = `<div class="row">${TABS.map(
@@ -130,7 +130,7 @@ export function renderSfx(r) {
     ? fx
         .map(
           (m) =>
-            `<span class="sfxw${xon("fx:" + m.id)}" data-sel="fx:${m.id}"><button class="sfxb" data-fx="${m.id}">🔊 ${esc(bare(m.name))}</button><button class="d sfxx xs" data-fxdel="${m.id}" title="Delete this sound effect">✕</button></span>`,
+            `<span class="sfxw${xon("fx:" + m.id)}" data-sel="fx:${esc(m.id)}"><button class="sfxb" data-fx="${esc(m.id)}">🔊 ${esc(bare(m.name))}</button><button class="d sfxx xs" data-fxdel="${esc(m.id)}" title="Delete this sound effect">✕</button></span>`,
         )
         .join("")
     : '<div class="mut">No sound effects yet. Upload them with ⬆ Upload effects.</div>';

@@ -49,10 +49,39 @@ Settings are environment variables:
 | Variable | Default | Purpose |
 |---|---|---|
 | `PORT` | `3010` | Port the server listens on |
-| `SHOW_CODE` | `vienovo2026` | Code for editors and live screens |
-| `DIRECTOR_CODE` | `director2026` | Code for the director |
+| `SHOW_CODE` | **required** | Code for editors and live screens (min 8 characters) |
+| `DIRECTOR_CODE` | **required** | Code for the director (min 8 characters, different from `SHOW_CODE`) |
 | `DATA_DIR` | `./server-data` | Shared state and uploaded files |
+| `MAX_UPLOAD_MB` | `2048` | Largest single upload |
 | `TURN_URL`, `TURN_USER`, `TURN_PASS` | none | Relay for strict company firewalls |
+
+**Access codes are required.** There are no built-in codes: the server prints an error and exits if
+`SHOW_CODE` or `DIRECTOR_CODE` is missing, shorter than 8 characters, or if both are the same. It never prints
+the codes. Easiest: create a file `frontend/.env` (git-ignored) with two lines, then run `npm run server`:
+
+```
+SHOW_CODE=your-editor-code
+DIRECTOR_CODE=your-director-code
+```
+
+(`.env` accepts `KEY=VALUE` lines, `#` comments and optional quotes; real environment variables take
+precedence over it.) Or set both variables in the terminal instead:
+
+```
+:: Windows (cmd)
+set SHOW_CODE=your-editor-code
+set DIRECTOR_CODE=your-director-code
+npm run server
+
+# Windows (PowerShell)
+$env:SHOW_CODE = "your-editor-code"; $env:DIRECTOR_CODE = "your-director-code"; npm run server
+
+# macOS / Linux
+SHOW_CODE=your-editor-code DIRECTOR_CODE=your-director-code npm run server
+```
+
+After 10 wrong codes within 5 minutes, further sign-in attempts from the same computer are refused until
+the 5 minutes have passed.
 
 **Live call (CEO speech from Teams, Google Meet or Zoom).** These platforms cannot be embedded in
 another page. Instead:

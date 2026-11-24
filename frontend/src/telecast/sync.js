@@ -11,6 +11,8 @@ import { netPush, canControl } from "./net.js";
 // MINE = an Editor's "Pop-out MY screen": a live-style window that mirrors THIS computer's own flow (no server link of its own)
 const MINE = location.hash === "#mine" || window.name === "VienovoMine";
 const LIVE = MINE || location.hash === "#live" || window.name === "VienovoLive";
+// pop-outs are same-origin windows: never post to another origin ("null" = file://, which only accepts "*")
+const TO = location.origin === "null" ? "*" : location.origin;
 let liveAt = 0,
   ch = null;
 try {
@@ -30,7 +32,7 @@ let popWin = null;
 const sendPop = (m) => {
   try {
     // ctl: false = an Editor's private flow, which a Live screen must not show
-    popWin && !popWin.closed && popWin.postMessage({ ...m, ctl: canControl() }, "*");
+    popWin && !popWin.closed && popWin.postMessage({ ...m, ctl: canControl() }, TO);
   } catch (e) {}
 };
 let qt = 0;
@@ -100,7 +102,7 @@ if (LIVE) {
       ch && ch.postMessage({ t: "hb" });
     } catch (e) {}
     try {
-      window.opener && window.opener.postMessage({ t: "hb" }, "*");
+      window.opener && window.opener.postMessage({ t: "hb" }, TO);
     } catch (e) {}
   };
   setInterval(hb, 2000);
@@ -117,11 +119,11 @@ if (LIVE) {
       m = { time: el._a.currentTime, paused: el._a.paused, i: el._i || 0 };
     if (m)
       try {
-        window.opener.postMessage({ t: "pos", ts: c.ts, kind: c.kind, ...m }, "*");
+        window.opener.postMessage({ t: "pos", ts: c.ts, kind: c.kind, ...m }, TO);
       } catch (e) {}
   }, 500);
   try {
-    window.opener && window.opener.postMessage({ t: "ready" }, "*");
+    window.opener && window.opener.postMessage({ t: "ready" }, TO);
   } catch (e) {}
 }
 function popOut() {
@@ -209,7 +211,7 @@ const done = (ts) => {
       ch && ch.postMessage({ t: "ended", ts });
     } catch (e) {}
     try {
-      window.opener && window.opener.postMessage({ t: "ended", ts }, "*");
+      window.opener && window.opener.postMessage({ t: "ended", ts }, TO);
     } catch (e) {}
   } else handleEnded(ts);
 };
@@ -237,7 +239,7 @@ function doAct(a) {
 function act(a) {
   if (LIVE) {
     try {
-      window.opener && window.opener.postMessage({ t: "act", a }, "*");
+      window.opener && window.opener.postMessage({ t: "act", a }, TO);
     } catch (e) {}
     try {
       ch && ch.postMessage({ t: "act", a });

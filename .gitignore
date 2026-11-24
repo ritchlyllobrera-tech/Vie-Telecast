@@ -23,7 +23,13 @@ frontend/public/assets/media/m17948960954245xmz.mp4
 # Secrets and editor files
 .env
 .env.*
+!.env.example
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# local AI assistant config (never commit)
+.claude/
+settings.local.json
+CLAUDE.md

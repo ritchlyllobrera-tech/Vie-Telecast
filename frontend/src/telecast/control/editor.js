@@ -71,7 +71,7 @@ function picker(g, kind, label, room) {
  <div class="pickl">${free
    .map(
      (m) =>
-       `<label class="pki${picked.has(m.id) ? " on" : ""}"><input type="checkbox" data-pk="${m.id}" ${picked.has(m.id) ? "checked" : ""}>${kind === "img" ? `<img class="lth" data-u="${m.id}" alt="">` : ICON[kind]} <span class="g">${esc(bare(m.name))}</span><span class="mut">${m.size ? MB(m.size) : ""}</span></label>`,
+       `<label class="pki${picked.has(m.id) ? " on" : ""}"><input type="checkbox" data-pk="${esc(m.id)}" ${picked.has(m.id) ? "checked" : ""}>${kind === "img" ? `<img class="lth" data-u="${esc(m.id)}" alt="">` : ICON[kind]} <span class="g">${esc(bare(m.name))}</span><span class="mut">${m.size ? MB(m.size) : ""}</span></label>`,
    )
    .join("")}</div>
  <div class="row"><button class="p" data-padd="1" ${n ? "" : "disabled"}>＋ Add selected (${n})</button><button data-pcancel="1">Cancel</button><span class="mut" data-pmsg></span></div></div>`;
@@ -79,7 +79,7 @@ function picker(g, kind, label, room) {
 
 /** reorder / remove buttons for an item in one of the segment's lists */
 const tools = (kind, id, i, n) =>
-  `<button data-mv="${kind}|${id}|-1" ${i ? "" : "disabled"} title="Move up">▲</button><button data-mv="${kind}|${id}|1" ${i < n - 1 ? "" : "disabled"} title="Move down">▼</button><button class="d xs" data-rm="${kind}|${id}" title="Remove from this segment (stays in the library)">✕</button>`;
+  `<button data-mv="${esc(kind)}|${esc(id)}|-1" ${i ? "" : "disabled"} title="Move up">▲</button><button data-mv="${esc(kind)}|${esc(id)}|1" ${i < n - 1 ? "" : "disabled"} title="Move down">▼</button><button class="d xs" data-rm="${esc(kind)}|${esc(id)}" title="Remove from this segment (stays in the library)">✕</button>`;
 
 /** The segment settings drawer (the editor lives in a slide-in panel next to the rundown). */
 const curPanel = () => document.body.dataset.panel || "";
@@ -97,18 +97,18 @@ function renderEditor(r) {
     vi = items("vid");
   const ed = $(r, "#ed"),
     H = `<div class="row"><b>Segment ${S.edit + 1}</b>${g.editedBy ? `<span class="mut">✏ last edited by ${esc(g.editedBy)}${LOCS[g.editedLoc] ? " (" + esc(LOCS[g.editedLoc]) + ")" : ""} at ${new Date(g.editedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>` : ""}</div>${locRow(g)}<input class="g" style="width:100%" data-f="title" value="${esc(g.title)}" placeholder="Title"><textarea data-f="desc" placeholder="Description (shown on the live screen)">${esc(g.desc)}</textarea>
- <div class="row"><label class="mut">Start time <input type="time" data-f="time" value="${g.time}"></label><label class="mut">Duration <input class="num" type="number" min="0" step="0.01" data-f="min" value="${g.min}"> min</label></div>
+ <div class="row"><label class="mut">Start time <input type="time" data-f="time" value="${esc(g.time)}"></label><label class="mut">Duration <input class="num" type="number" min="0" max="600" step="0.01" data-f="min" value="${esc(g.min)}"> min</label></div>
  <h2 style="margin-top:10px">📡 All sites</h2>
  <div class="row"><label class="mut"><input type="checkbox" data-allf="1" ${g.all ? "checked" : ""} ${canControl() && NET.on ? "" : "disabled"}> Play this segment on <b>every site</b> (Cebu and all Editor screens) when the Director presses ▶. Off: only Cebu.</label></div>
  <h2 style="margin-top:10px">📺 YouTube Live (unlisted)</h2>
  <div class="row"><input class="g" data-yt="1" placeholder="Paste the YouTube Live link (https://www.youtube.com/watch?v=…)" value="${esc(g.yt || (g.call?.platform === "youtube" ? g.call.link : "") || "")}"></div>
  <div class="mut" data-yh>${ytHint(g.yt || (g.call?.platform === "youtube" ? g.call.link : ""))}</div>
  <div class="mut">When this segment goes live (▶), every Live Screen plays the YouTube stream by itself in the video area. Moving to another segment stops it. The videos below stay as a backup.</div>
- <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${m.id}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button class="p" data-pv="${m.id}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
+ <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${esc(m.id)}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button class="p" data-pv="${esc(m.id)}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
  <div class="row">${picker(g, "vid", "Add videos from library", Infinity)}</div>
- <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${m.id}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button data-pa="${m.id}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
+ <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${esc(m.id)}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button data-pa="${esc(m.id)}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
  <div class="row">${picker(g, "aud", "Add songs from library", Infinity)}</div>
- <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${m.id}"><img data-u="${m.id}" data-bg="${m.id}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${m.id}" title="Remove from this segment">✕</button></span>`).join("")}
+ <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${esc(m.id)}"><img data-u="${esc(m.id)}" data-bg="${esc(m.id)}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${esc(m.id)}" title="Remove from this segment">✕</button></span>`).join("")}
  <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
  <h2 style="margin-top:10px">Autoplay &amp; timing</h2>
  <div class="row"><label class="mut"><input type="checkbox" data-f="am" ${g.am !== false ? "checked" : ""}> 🎵 Auto-play its music when this segment starts</label></div>
