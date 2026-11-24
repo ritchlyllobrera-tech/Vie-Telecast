@@ -1,0 +1,374 @@
+{
+  "seg": 0,
+  "edit": 9,
+  "scene": "standby",
+  "auto": true,
+  "running": true,
+  "started": 1,
+  "ticker": "Welcome to Vienovo Philippines Inc. Year End and Christmas Party 2026! Enjoy the celebration, fellowship, games, and awards.",
+  "segs": [
+    {
+      "desc": "Standby loop while guests arrive. One table per site, two staff each, ushers to guide participants.",
+      "time": "14:30",
+      "av": false,
+      "bg": null,
+      "id": "seg-1",
+      "title": "Registration",
+      "min": 30,
+      "loop": true,
+      "an": true,
+      "wheel": false
+    },
+    {
+      "desc": "Welcome, house rules and safety briefing.",
+      "time": "15:00",
+      "av": true,
+      "bg": null,
+      "id": "seg-2",
+      "title": "Opening",
+      "min": 15,
+      "an": true,
+      "wheel": false
+    },
+    {
+      "desc": "Everyone plays at the same time, by table.",
+      "time": "15:15",
+      "av": true,
+      "bg": "m17949619779455lv1",
+      "id": "seg-3",
+      "title": "Games, round 1",
+      "min": 50,
+      "an": true,
+      "wheel": false,
+      "loop": true
+    },
+    {
+      "desc": "Each region has its own winners. CEO presents top award in Visayas.",
+      "time": "16:05",
+      "av": true,
+      "bg": "m1794962026299bb5u",
+      "id": "seg-4",
+      "title": "Employee Awards",
+      "min": 30,
+      "wheel": false
+    },
+    {
+      "desc": "Secret Game.",
+      "time": "16:35",
+      "av": true,
+      "bg": null,
+      "id": "seg-5",
+      "title": "Games, round 2",
+      "min": 30,
+      "wheel": false
+    },
+    {
+      "desc": "Pre-recorded. Every region plays it at the exact same minute.",
+      "time": "17:05",
+      "av": false,
+      "bg": null,
+      "id": "seg-6",
+      "title": "CEO's recorded speech",
+      "min": 10,
+      "wheel": false
+    },
+    {
+      "desc": "Tables called in turns.",
+      "time": "17:15",
+      "av": true,
+      "bg": null,
+      "id": "seg-7",
+      "title": "Buffet",
+      "min": 60,
+      "wheel": false
+    },
+    {
+      "desc": "Live vocal performance from main regional stage.",
+      "time": "18:00",
+      "av": false,
+      "bg": null,
+      "id": "seg-8",
+      "title": "Intermission (song) by Jhane Bellita",
+      "min": 5,
+      "wheel": false
+    },
+    {
+      "desc": "Witnessed draw, grand prize last.",
+      "time": "18:15",
+      "av": false,
+      "bg": "m1794962050552w8s4",
+      "id": "seg-9",
+      "title": "Stars of the Night and Grand Raffle",
+      "min": 35,
+      "an": true,
+      "loop": true,
+      "wheel": true
+    },
+    {
+      "desc": "Thanks, group photo and dismissal.",
+      "time": "18:50",
+      "av": false,
+      "bg": null,
+      "id": "seg-10",
+      "title": "Closing",
+      "min": 10,
+      "wheel": false,
+      "an": false,
+      "loop": true
+    }
+  ],
+  "awards": [
+    {
+      "name": "Ritchly Llobrera",
+      "award": "Always Late"
+    }
+  ],
+  "pool": "Ella Abarquez\nJohnrey Agocejos\nJiame Agon\nJonel Alfante\nLawrence Anthony Alo\nCris Dean Basale\nJosef Eirone Bautista\nEfren Cinco\nCris-ann De La Cruz\nEmily Olasiman\nJessie Gabio\nMathieu Francis Marie Guillaume\nIsrael Lubas\nKen Macasaet\nYoann Nohe\nWindel Oliva\nJessah Mae Bernados\nRachel Mae Beduya\nChristophe Romelard\nRonyl Saranillo\nRichard Taban-ud\nJan Michael Torre\nBernie Vergara\nJoel Cagande\nJoselito Nieves\nGeraldine Pening\nDioscoro III Sanchez\nFranco Tembrevilla\nUrbano Jr. Audeje\nJulito Villaester\nCherryl Cadorna\nEugene Bernardo\nRaymundo Bancala\nAlchier Heyrosa\nVirgilio Macasaol\nMichael Ralo\nRichie Ymas\nAngelica Cosico\nDino Andriano\nDominador Durano Jr.\nJessa Pojas\nJed Mag-uyon\nJason Jumao-as\nJoe Patrick Eyoy\nAaron Abilar\nRena Husain\nEnrique Flordeliza Jr\nLanny Diaz\nSheynly Rosales\nCristy Soco\nDarell Abucay\nMatias Abuzo\nAlexander Almacin\nDale Auman\nRenante Baguio\nZaldy Caingcoy\nPolicarpo Camento Jr.\nJovanne Caparoso\nMark Eric Caparoso\nMiguel Dajotoy Jr.\nRegie Ermac\nRonilo Ermac\nJuvie Garbo\nMichael Gilbuela\nDennis Ibale Jr.\nJayson Jugalbot\nMark Anthony Laag\nRey Marc Jhay Magale\nAbraham Maquilan Jr.\nNelmer Maquilan\nManolito Mejias\nJoven Monte\nReynan Muaña\nMario Otero\nMichael Rosellosa Jr.\nArnulfo Sanchez\nRichard Saycon\nAgapito Sumatra\nJohn Rey Caingcoy\nLebert Lapera\nJaime Muñoz\nArthur Campugan\nCathyren Paradillo\nLuisito Asis\nEmma Piala\nMiguel Caballero\nGregorio Vinas\nAlfredo Etulle\nRodzrey Batulan\nErwin Igot\nDewi Marie Daclan\nMarjon Arsolon\nChristian Gil Rubia\nAngelyn Ayawan\nEliazar Fat\nCherry Gil Rubia\nReysun Reponte\nAileen Urtezuela\nJomar Catubig\nRoel Gorillo\nCharise Cosico\nElvin Maniega\nCherlsea Marie Bacaro\nPaulo Chino Cavan\nEric Salazar\nGregorio Ersan\nCherie Mae Pening\nIsidro Repeso\nSilvano Espinal\nRico Icoy\nMelanie Cuyos\nRamil Blancaflor\nArc Geil Arradaza\nRalph Mondero\nMarie Antoinette Holanda\nEdward Josol\nRoxan Bacu\nHerbert Batictic\nJake Tampioc\nLoe Ando\nJomar Cabugnason\nJunifer Dinulan\nMargie Castanares\nMaria Shiena Cañete\nMichelle Tabar\nJhane Marie Bellita\nAntonio Penafiel\nJanica Nichole Frias\nMichelle Garinggo\nJake Jefferson Petinio\nGinno Casanares\nRicardo Jr. Palenjie\nJunrel Otapil\nJohn Joey Bardaje\nJessica Mae Agustin\nLybert Davis\nRobert Globio\nAndy Velasquez\nJerlyn Etomay\nMebelyn Avelino\nHanlit Christian Alenton\nLaura Soliva\nAnthony Verdida\nMonchito Jr. Gabutero\nJose Orgie Pableo\nElsworth Mendez\nMarcelino Lilo-an\nRemz Francis Ramasasa\nErnie Dable\nRussel Camillus Tan\nMaricor Pableo\nRegner Castro\nWinston Sibongga\nMarie Joan Nacilla\nAlejandro Mendez III\nCyril Abais\nSabiniano III Porlonga\nJulius Peliro\nArgie Casis\nRitchly Llobrera\nJudito Sameon Jr\nMark Alpie Mendez\nMark Bryan Suralta\nAndrew Quider\nFelix Davirao\nNino Llegunas\nMichael Magtunao\nJoel Carrera\nLouella Jane Ortega\nJovanni Managay\nKeanne Margarette Garcia\nKent Alexson Maquilan\nChristian Ponteros\nEarl John Poliran\nPaul Sala\nLeo Teves\nAna Labarite\nVincient Illustrisimo\nAngelo Belena\nArmando Dayondon\nHarold Emerson Gallos\nRufino Villanueva\nRoland Alimpulos\nKhenneth Monterde\nGeryck Angelo Escropolo\nGino Calderon\nJean Cabeg\nJagust Gelig\nBemar Conejos\nMar Ben Juntilla\nRoderick Cruz\nGregorio Montilla\nNila Ross Arsua",
+  "winners": [],
+  "spot": -1,
+  "raffle": null,
+  "segStart": 1795069270435,
+  "t0": 1795069270436,
+  "media": [
+    {
+      "id": "m1794886384905puhd",
+      "seg": "seg-1",
+      "kind": "aud",
+      "name": "Michael Bublé - It's Beginning To Look A Lot Like Christmas.mp4"
+    },
+    {
+      "id": "m17948863850344mro",
+      "seg": "seg-1",
+      "kind": "aud",
+      "name": "Michael Bublé - Frosty The Snowman (ft. The Puppini Sisters).mp4"
+    },
+    {
+      "id": "m1794886385135vw0a",
+      "seg": "seg-1",
+      "kind": "aud",
+      "name": "Leroy Anderson Sleigh Ride.mp4"
+    },
+    {
+      "id": "m1794886385371eygz",
+      "seg": "seg-1",
+      "kind": "aud",
+      "name": "Frank Sinatra - Let It Snow! Let It Snow! Let It Snow!.mp4"
+    },
+    {
+      "id": "m1794886385544z2z8",
+      "seg": "seg-1",
+      "kind": "aud",
+      "name": "Michael Bublé - Winter Wonderland.mp4"
+    },
+    {
+      "id": "m1794886433720patm",
+      "seg": "seg-3",
+      "kind": "aud",
+      "name": "The Jackson 5 - Frosty The Snowman.mp4"
+    },
+    {
+      "id": "m17948864337533se4",
+      "seg": "seg-3",
+      "kind": "aud",
+      "name": "The Ronettes - Sleigh Ride (Lyrics).mp4"
+    },
+    {
+      "id": "m1794886433843mtma",
+      "seg": "seg-3",
+      "kind": "aud",
+      "name": "Chuck Berry - Run Rudolph Run (Lyrics).mp4"
+    },
+    {
+      "id": "m1794886433897m699",
+      "seg": "seg-3",
+      "kind": "aud",
+      "name": "Underneath the Tree.mp4"
+    },
+    {
+      "id": "m1794886433940bbjn",
+      "seg": "seg-3",
+      "kind": "aud",
+      "name": "Santa Tell Me.mp4"
+    },
+    {
+      "id": "m1794886433978aqr1",
+      "seg": "seg-3",
+      "kind": "aud",
+      "name": "Rockin' Around The Christmas Tree.mp4"
+    },
+    {
+      "id": "m1794886434031gzmf",
+      "seg": "seg-3",
+      "kind": "aud",
+      "name": "Jingle Bell Rock.mp4"
+    },
+    {
+      "id": "m1794886453689ewca",
+      "seg": "seg-4",
+      "kind": "aud",
+      "name": "Carol of the Bells - Trans-Siberian Orchestra - Higher Quality.mp4"
+    },
+    {
+      "id": "m1794886488825caen",
+      "seg": "seg-5",
+      "kind": "aud",
+      "name": "The Jackson 5 - Frosty The Snowman.mp4"
+    },
+    {
+      "id": "m17948864888578ziz",
+      "seg": "seg-5",
+      "kind": "aud",
+      "name": "The Ronettes - Sleigh Ride (Lyrics).mp4"
+    },
+    {
+      "id": "m1794886488930s0mp",
+      "seg": "seg-5",
+      "kind": "aud",
+      "name": "Chuck Berry - Run Rudolph Run (Lyrics).mp4"
+    },
+    {
+      "id": "m1794886488969u0z3",
+      "seg": "seg-5",
+      "kind": "aud",
+      "name": "Underneath the Tree.mp4"
+    },
+    {
+      "id": "m1794886488996fl5p",
+      "seg": "seg-5",
+      "kind": "aud",
+      "name": "Santa Tell Me.mp4"
+    },
+    {
+      "id": "m1794886489022nny9",
+      "seg": "seg-5",
+      "kind": "aud",
+      "name": "Rockin' Around The Christmas Tree.mp4"
+    },
+    {
+      "id": "m1794886489074wppd",
+      "seg": "seg-5",
+      "kind": "aud",
+      "name": "Jingle Bell Rock.mp4"
+    },
+    {
+      "id": "m1794886531569k03z",
+      "seg": "seg-7",
+      "kind": "aud",
+      "name": "A Charlie Brown Christmas - Vince Guaraldi Trio - Full Album Fireplace Yule Log  Official Video.mp4"
+    },
+    {
+      "id": "m179488655619436ud",
+      "seg": "seg-9",
+      "kind": "aud",
+      "name": "All I Want For Christmas Is You.mp4"
+    },
+    {
+      "id": "m17948865703705bcq",
+      "seg": "seg-10",
+      "kind": "aud",
+      "name": "Sam Smith - Have Yourself A Merry Little Christmas(Lyrics).mp4"
+    },
+    {
+      "id": "m1794886570448uhol",
+      "seg": "seg-10",
+      "kind": "aud",
+      "name": "Michael Bublé - White Christmas (ft. Shania Twain).mp4"
+    },
+    {
+      "id": "m1794887099672wm9y",
+      "seg": "seg-7",
+      "kind": "aud",
+      "name": "A Charlie Brown Christmas, but its LoFi HipHop [Full Album].mp4"
+    },
+    {
+      "id": "m17948960954245xmz",
+      "seg": "seg-2",
+      "kind": "vid",
+      "name": "Opening .mp4"
+    },
+    {
+      "id": "m17949619779455lv1",
+      "seg": "seg-3",
+      "kind": "img",
+      "name": "image_20261117_102615_3-edit-the-text-of-this-photo-use-montserrat-font-make-the-word-winter-wonderl.jpg",
+      "size": 203507
+    },
+    {
+      "id": "m1794965282689lgyx",
+      "seg": "seg-6",
+      "kind": "vid",
+      "name": "The_Lucky_Winner_Crown.mp4",
+      "size": 11811314
+    },
+    {
+      "id": "m1795047683634w7dk",
+      "seg": "seg-4",
+      "kind": "img",
+      "name": "image_20261116_111534-edit-the-text-of-this-photo-use-montserrat-font-add-winter-wonderland-2026_1-m.jpg",
+      "size": 288669
+    },
+    {
+      "id": "m17950476938860ymw",
+      "seg": "seg-4",
+      "kind": "img",
+      "name": "image_20261110_145302-edit-the-text-of-this-photo-use-montserrat-font-ad-make-sure-all-of-the-text-f.jpg",
+      "size": 352314
+    },
+    {
+      "id": "m1795047715376a7ga",
+      "seg": "seg-4",
+      "kind": "img",
+      "name": "image_20261110_145114-remove-the-lantern-edit-the-text-of-this-photo-use-montserrat-font-ad-make-sur.jpg",
+      "size": 274502
+    },
+    {
+      "id": "m1795047725775p5vs",
+      "seg": "seg-4",
+      "kind": "img",
+      "name": "image_20261110_144744-the-current-year-is-2026-edit-the-text-of-this-photo-use-montserrat-font-ad-ma.jpg",
+      "size": 325187
+    },
+    {
+      "id": "m179506962634713xk",
+      "seg": "seg-5",
+      "kind": "img",
+      "name": "image_20261119_142619.jpg",
+      "size": 371515
+    },
+    {
+      "id": "m1795069660423irzu",
+      "seg": "seg-9",
+      "kind": "img",
+      "name": "image_20261110_145001-edit-the-text-of-this-photo-use-montserrat-font-ad-make-sure-all-of-the-text-f (1).jpg",
+      "size": 405829
+    },
+    {
+      "id": "m1795069660440g5pm",
+      "seg": "seg-9",
+      "kind": "img",
+      "name": "image_20261118_135052-can-you-make-the-text-in-upper-center-of-the-pictu-make-the-winter-wonderland.jpg",
+      "size": 324657
+    }
+  ],
+  "cmd": {
+    "ts": 1795069270436,
+    "kind": "aud",
+    "action": "play",
+    "ids": [
+      "m1794886384905puhd",
+      "m17948863850344mro",
+      "m1794886385135vw0a",
+      "m1794886385371eygz",
+      "m1794886385544z2z8"
+    ],
+    "seg": "seg-1"
+  },
+  "defBg": "",
+  "prize": "Sampung Kilong 18g Mix Grains",
+  "savedAt": 1795069746708,
+  "monSound": false,
+  "snow": "blizzard",
+  "spotTs": 1795048544459,
+  "spinSec": 30,
+  "bgId": ""
+}

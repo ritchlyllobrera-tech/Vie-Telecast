@@ -1,0 +1,256 @@
+/** Segment editor (card 3): details, plus music / videos / photos picked from the Media library. */
+import { $, esc, MB, LOCS, meetLink, meetPlat } from "../constants.js";
+import { NET, canControl, canEditSeg, myLoc } from "../net.js";
+import { S } from "../state.js";
+import { ownOut, quiet, save } from "../sync.js";
+import { url } from "../media.js";
+import { updateStage } from "../stage/stage.js";
+import { cmd } from "../actions.js";
+import { renderRundown, delSeg } from "./rundown.js";
+import { libItems, libItem } from "./library.js";
+import { xon } from "./select.js";
+
+const MAX_IMG = 6;
+const PLAT = { teams: "Microsoft Teams", meet: "Google Meet", zoom: "Zoom", other: "Other meeting" };
+const bare = (name) => name.replace(/\.[^.]+$/, "");
+/** the line under the meeting link: is it a link the Director can open? */
+const linkHint = (s) => {
+  if (!String(s || "").trim()) return "";
+  const u = meetLink(s);
+  if (!u) return `<span class="err">⚠ This is not a meeting link. Copy the whole invite link from Teams, Google Meet or Zoom.</span>`;
+  return `<span class="okc">✔ ${esc(PLAT[meetPlat(u)] || "Meeting")} link: ${esc(u)}</span>`;
+};
+
+/**
+ * Location of the segment. The Director can give it to any location; an Editor to their own or back to
+ * "All locations". Controls that change another location's segment are disabled for an Editor
+ * (playing / previewing stays allowed: that is their own private flow).
+ */
+const LOCKED = "[data-f],[data-cf],[data-mv],[data-rm],[data-open],[data-segdel]";
+function locRow(g) {
+  if (!NET.on) return ""; // working alone: locations don't matter
+  const mine = myLoc(),
+    keys = canControl() ? Object.keys(LOCS) : [mine, g.loc].filter((k, i, a) => k && LOCS[k] && a.indexOf(k) === i),
+    opts =
+      `<option value="">🌐 All locations</option>` +
+      keys.map((k) => `<option value="${k}" ${g.loc === k ? "selected" : ""}>📍 ${esc(LOCS[k])}</option>`).join("");
+  const note = !canEditSeg(g)
+    ? `<span class="lockm">🔒 This is ${esc(LOCS[g.loc] || g.loc)}'s segment. Only ${esc(LOCS[g.loc] || g.loc)} or the Director can change it; you can still preview it.</span>`
+    : g.loc && g.loc === mine
+      ? `<span class="okc">✔ Your location's segment</span>`
+      : !g.loc
+        ? `<span class="mut">Shared by all locations</span>`
+        : "";
+  return `<div class="row locrow"><label class="mut">Belongs to <select data-f="loc">${opts}</select></label>${note}</div>`;
+}
+
+/* multi-select picker state: which list is open, and what is ticked in it */
+let openKind = "",
+  openSeg = -1;
+const picked = new Set();
+const ICON = { aud: "🎵", vid: "🎬", img: "🖼" };
+
+/** "+ Add from library" button; when open, a checklist of the items of this kind not yet in the segment. */
+function picker(g, kind, label, room) {
+  const free = libItems(kind).filter((m) => !g[kind].includes(m.id));
+  if (room <= 0) return `<div class="mut">Maximum of ${MAX_IMG} photos per segment.</div>`;
+  if (!free.length)
+    return `<div class="mut">${libItems(kind).length ? "Everything in the library is already added." : "Nothing in the Media library yet. Upload there first."}</div>`;
+  if (openKind !== kind || openSeg !== S.edit)
+    return `<button class="pick" data-open="${kind}">＋ ${label}… <span class="mut">(${free.length} available)</span></button>`;
+  const n = free.filter((m) => picked.has(m.id)).length,
+    lim = room < Infinity ? ` <span class="mut">· up to ${room} more</span>` : "";
+  return `<div class="pickp"><div class="row"><b class="g">${label}${lim}</b><button data-pall="1">Select all</button><button data-pnone="1">Clear</button></div>
+ <div class="pickl">${free
+   .map(
+     (m) =>
+       `<label class="pki${picked.has(m.id) ? " on" : ""}"><input type="checkbox" data-pk="${m.id}" ${picked.has(m.id) ? "checked" : ""}>${kind === "img" ? `<img class="lth" data-u="${m.id}" alt="">` : ICON[kind]} <span class="g">${esc(bare(m.name))}</span><span class="mut">${m.size ? MB(m.size) : ""}</span></label>`,
+   )
+   .join("")}</div>
+ <div class="row"><button class="p" data-padd="1" ${n ? "" : "disabled"}>＋ Add selected (${n})</button><button data-pcancel="1">Cancel</button><span class="mut" data-pmsg></span></div></div>`;
+}
+
+/** reorder / remove buttons for an item in one of the segment's lists */
+const tools = (kind, id, i, n) =>
+  `<button data-mv="${kind}|${id}|-1" ${i ? "" : "disabled"} title="Move up">▲</button><button data-mv="${kind}|${id}|1" ${i < n - 1 ? "" : "disabled"} title="Move down">▼</button><button class="d xs" data-rm="${kind}|${id}" title="Remove from this segment (stays in the library)">✕</button>`;
+
+function renderEditor(r) {
+  const g = S.segs[S.edit],
+    items = (k) => g[k].map(libItem).filter(Boolean),
+    im = items("img"),
+    au = items("aud"),
+    vi = items("vid");
+  const ed = $(r, "#ed"),
+    H = `<div class="row"><b>Segment ${S.edit + 1}</b>${g.editedBy ? `<span class="mut">✏ last edited by ${esc(g.editedBy)}${LOCS[g.editedLoc] ? " (" + esc(LOCS[g.editedLoc]) + ")" : ""} at ${new Date(g.editedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>` : ""}<span class="g"></span><button class="d" data-segdel="1" ${S.segs.length <= 1 || (S.edit === S.seg && S.started) ? `disabled title="${S.segs.length <= 1 ? "The rundown needs at least one segment" : "This segment is on air. Move to another segment first."}"` : 'title="Delete this segment from the rundown"'}>🗑 Delete segment</button></div>${locRow(g)}<input class="g" style="width:100%" data-f="title" value="${esc(g.title)}" placeholder="Title"><textarea data-f="desc" placeholder="Description (shown on the live screen)">${esc(g.desc)}</textarea>
+ <div class="row"><label class="mut">Start time <input type="time" data-f="time" value="${g.time}"></label><label class="mut">Duration <input class="num" type="number" min="0" step="0.01" data-f="min" value="${g.min}"> min</label></div>
+ <h2 style="margin-top:10px">Autoplay &amp; timing</h2>
+ <div class="row"><label class="mut"><input type="checkbox" data-f="am" ${g.am !== false ? "checked" : ""}> 🎵 Auto-play its music when this segment starts</label></div>
+ <div class="row"><label class="mut"><input type="checkbox" data-f="av" ${g.av ? "checked" : ""}> 🎬 Auto-play its first video when this segment starts</label></div>
+ <div class="row"><label class="mut">⏰ When its time is up <select data-f="endAct"><option value="ask" ${g.endAct !== "next" ? "selected" : ""}>Ask me with a pop-up</option><option value="next" ${g.endAct === "next" ? "selected" : ""}>Go to the next segment automatically</option></select></label></div>
+ <div class="row"><label class="mut"><input type="checkbox" data-f="an" ${g.an ? "checked" : ""}> ⏭ When its video or music finishes, go to the next segment automatically</label></div>
+ <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${m.id}"><img data-u="${m.id}" data-bg="${m.id}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${m.id}" title="Remove from this segment">✕</button></span>`).join("")}
+ <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
+ <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${m.id}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button data-pa="${m.id}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
+ <div class="row">${picker(g, "aud", "Add songs from library", Infinity)}</div>
+ <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${m.id}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button class="p" data-pv="${m.id}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
+ <div class="row">${picker(g, "vid", "Add videos from library", Infinity)}</div>
+ <h2 style="margin-top:10px">📞 Live call (Teams / Google Meet / Zoom)</h2>
+ <div class="row"><select data-cf="platform">${Object.entries(PLAT)
+   .map(([k, v]) => `<option value="${k}" ${(g.call?.platform || "teams") === k ? "selected" : ""}>${v}</option>`)
+   .join(
+     "",
+   )}</select><input class="g" data-cf="link" placeholder="Paste the meeting link (https://…)" value="${esc(g.call?.link || "")}"></div>
+ <div class="mut" data-lh>${linkHint(g.call?.link)}</div>
+ <div class="mut">For a live speech (e.g. the CEO): when this segment is on air, the Director opens the meeting in a Chrome / Edge tab and presses “📡 Share call to Live Screens”. Every location sees and hears it.</div>`;
+  if (ed._h !== H) {
+    const sc = ed.querySelector(".pickl")?.scrollTop || 0;
+    ed._h = H;
+    ed.innerHTML = H;
+    ed.querySelectorAll("[data-u]").forEach(async (i) => (i.src = await url(i.dataset.u)));
+    if (!canEditSeg(g)) ed.querySelectorAll(LOCKED).forEach((x) => (x.disabled = true));
+    const pl = ed.querySelector(".pickl");
+    if (pl) pl.scrollTop = sc;
+  }
+  ed.querySelectorAll("[data-f]").forEach((x) => {
+    const f = x.dataset.f,
+      h = () => {
+        const g = S.segs[S.edit]; // fresh: another user's change may have replaced the object while typing
+        g[f] = x.type === "checkbox" ? x.checked : f === "min" ? Math.max(0, +x.value || 0) : x.value;
+        quiet();
+        renderRundown(r);
+        updateStage($(r, "#prev"), ownOut());
+      };
+    x.oninput = h;
+    x.onchange = h;
+  });
+  {
+    const b = ed.querySelector("[data-segdel]");
+    if (b)
+      b.onclick = () => {
+        const g = S.segs[S.edit];
+        if (confirm(`Delete segment ${S.edit + 1} “${g.title}” from the rundown? Its music, videos and photos stay in the Media library.`))
+          delSeg(S.edit);
+      };
+  }
+  ed.querySelectorAll("[data-cf]").forEach((x) => {
+    x.oninput = x.onchange = () => {
+      const g = S.segs[S.edit];
+      g.call = { platform: "teams", link: "", ...g.call, [x.dataset.cf]: x.value.trim() };
+      if (x.dataset.cf === "link") {
+        // the platform follows the link (a Google Meet link under "Microsoft Teams" is confusing)
+        const p = meetPlat(g.call.link);
+        if (p) {
+          g.call.platform = p;
+          const sel = ed.querySelector('[data-cf="platform"]');
+          if (sel) sel.value = p;
+        }
+        const h = ed.querySelector("[data-lh]");
+        if (h) h.innerHTML = linkHint(g.call.link);
+      }
+      quiet();
+      r.querySelector("#callbar")._h = null;
+    };
+  });
+  // multi-select picker
+  const free = () => libItems(openKind).filter((m) => !g[openKind].includes(m.id)),
+    room = () => (openKind === "img" ? MAX_IMG - g.img.length : Infinity),
+    close = () => {
+      openKind = "";
+      picked.clear();
+    };
+  ed.querySelectorAll("[data-open]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        picked.clear();
+        openKind = b.dataset.open;
+        openSeg = S.edit;
+        renderEditor(r);
+      }),
+  );
+  ed.querySelectorAll("[data-pk]").forEach(
+    (c) =>
+      (c.onchange = () => {
+        if (c.checked && picked.size >= room()) {
+          c.checked = false;
+          const m = ed.querySelector("[data-pmsg]");
+          if (m) m.textContent = `Only ${room()} more photo(s) fit in this segment.`;
+          return;
+        }
+        if (c.checked) picked.add(c.dataset.pk);
+        else picked.delete(c.dataset.pk);
+        renderEditor(r);
+      }),
+  );
+  const pall = ed.querySelector("[data-pall]");
+  if (pall)
+    pall.onclick = () => {
+      free()
+        .slice(0, room())
+        .forEach((m) => picked.add(m.id));
+      renderEditor(r);
+    };
+  const pnone = ed.querySelector("[data-pnone]");
+  if (pnone)
+    pnone.onclick = () => {
+      picked.clear();
+      renderEditor(r);
+    };
+  const pcancel = ed.querySelector("[data-pcancel]");
+  if (pcancel)
+    pcancel.onclick = () => {
+      close();
+      renderEditor(r);
+    };
+  const padd = ed.querySelector("[data-padd]");
+  if (padd)
+    padd.onclick = () => {
+      // keep the library order, which is the upload order
+      const add = free()
+        .filter((m) => picked.has(m.id))
+        .slice(0, room())
+        .map((m) => m.id);
+      g[openKind].push(...add);
+      close();
+      save();
+    };
+  ed.querySelectorAll("[data-mv]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const [k, id, d] = b.dataset.mv.split("|"),
+          a = g[k],
+          i = a.indexOf(id),
+          j = i + +d;
+        if (i < 0 || j < 0 || j >= a.length) return;
+        [a[i], a[j]] = [a[j], a[i]];
+        save();
+      }),
+  );
+  ed.querySelectorAll("[data-rm]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const [k, id] = b.dataset.rm.split("|");
+        g[k] = g[k].filter((x) => x !== id);
+        if (k === "img" && S.bgId === id) S.bgId = "";
+        save();
+      }),
+  );
+  ed.querySelectorAll("[data-bg]").forEach(
+    (i) =>
+      (i.onclick = () => {
+        S.bgId = S.bgId === i.dataset.bg ? "" : i.dataset.bg;
+        save();
+      }),
+  );
+  ed.querySelectorAll("[data-pa]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const ids = au.map((m) => m.id); // ▶ on one song: start there, then carry on through the playlist
+        cmd("aud", "play", ids, b.dataset.pa === "1" ? 0 : Math.max(0, ids.indexOf(b.dataset.pa)));
+      }),
+  );
+  ed.querySelectorAll("[data-pv]").forEach((b) => (b.onclick = () => cmd("vid", "play", [b.dataset.pv])));
+  ed.querySelectorAll("[data-tg]").forEach((b) => (b.onclick = () => cmd(b.dataset.tg, "toggle")));
+  ed.querySelectorAll("[data-st]").forEach((b) => (b.onclick = () => cmd("aud", "stop")));
+}
+
+export { renderEditor };

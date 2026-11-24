@@ -1,0 +1,234 @@
+/* Frosted "ice" card treatment and final stage overrides (must load last). */
+.ice {
+  border: 0.3cqw solid #bae6fd !important;
+  background: radial-gradient(circle at 50% 0, #14457f, #071735 62%, #040b1c) !important;
+  box-shadow:
+    0 0 5cqw #7dd3fc66,
+    0 0 12cqw #a78bfa33,
+    inset 0 0 4cqw #38bdf833 !important;
+  animation: frost 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both !important;
+}
+@keyframes frost {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.ice::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(120deg, #34d39933, #38bdf833, #a78bfa33);
+  animation: aur 5s ease-in-out infinite alternate;
+}
+@keyframes aur {
+  from {
+    opacity: 0.15;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+.ice .ic {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3.4cqw;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40' preserveAspectRatio='none'><path d='M0 0H100V6L96 22L92 6L86 30L80 6L74 16L68 6L60 34L52 6L46 20L40 6L32 28L24 6L18 18L12 6L6 26L0 6Z' fill='%23e0f2fe' fill-opacity='.92'/></svg>")
+    repeat-x;
+  background-size: 16cqw 3.4cqw;
+  pointer-events: none;
+  z-index: 2;
+}
+.ice .fz {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -360px;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.75;
+  background-image: radial-gradient(circle, #fff 1.6px, transparent 2.2px),
+    radial-gradient(circle, #bae6fd 1.1px, transparent 1.8px), radial-gradient(circle, #ffffffaa 2.4px, transparent 3px);
+  background-size:
+    70px 90px,
+    45px 60px,
+    120px 180px;
+  background-position:
+    0 0,
+    20px 30px,
+    40px 60px;
+  animation: fz 9s linear infinite;
+}
+@keyframes fz {
+  to {
+    transform: translateY(360px);
+  }
+}
+.ice > :not(i):not(svg):not(.xb) {
+  position: relative;
+  z-index: 1;
+}
+.ice {
+  border: 0.3cqw solid #dff3ff !important;
+  background: linear-gradient(
+    160deg,
+    rgba(40, 100, 170, 0.88),
+    rgba(14, 50, 100, 0.92) 45%,
+    rgba(4, 11, 28, 0.95)
+  ) !important;
+  box-shadow:
+    0 0 5cqw #bae6fd77,
+    0 0 12cqw #a78bfa33,
+    inset 0 0 3cqw #e0f2fe88 !important;
+}
+.ice .fz {
+  display: none !important;
+}
+.ice .fr {
+  display: block;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.95;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' seed='7'/><feColorMatrix type='matrix' values='0 0 0 0 .88 0 0 0 0 .96 0 0 0 0 1 0 0 0 2.6 -1.1'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 260px 260px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 68% at 50% 50%, transparent 36%, #000 100%);
+  mask-image: radial-gradient(ellipse 70% 68% at 50% 50%, transparent 36%, #000 100%);
+}
+.ice .ic {
+  height: 5cqw;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 50' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='white' stop-opacity='.97'/><stop offset='.6' stop-color='%23cfeaff' stop-opacity='.7'/><stop offset='1' stop-color='%2399d2ff' stop-opacity='.25'/></linearGradient></defs><path fill='url(%23g)' d='M0 0H260V7L254 18L249 7L243 38L236 7L229 24L222 7L214 46L205 7L198 21L190 7L183 32L175 7L166 15L158 7L149 41L140 7L133 22L125 7L117 29L108 7L101 17L93 7L85 44L76 7L69 20L61 7L53 34L45 7L38 16L30 7L22 39L14 7L7 21L0 7Z'/><path stroke='white' stroke-opacity='.8' stroke-width='1.2' fill='none' d='M243 12V30M214 12V40M149 12V36M85 12V38M22 12V32'/></svg>")
+    repeat-x;
+  background-size: 26cqw 5cqw;
+}
+.ice .fg {
+  display: block;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(160deg, #f4fbff, #cde6fa);
+  animation: fog 1.9s ease-in 0.4s both;
+}
+@keyframes fog {
+  0% {
+    opacity: 0.96;
+  }
+  70% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.fe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 15cqw;
+  height: 15cqw;
+  fill: none;
+  stroke: #e6f6ff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 2;
+}
+.fe path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: grow 2.6s cubic-bezier(0.3, 0.7, 0.2, 1) 0.25s forwards;
+}
+.fe.f2 {
+  left: auto;
+  right: 0;
+  transform: scaleX(-1);
+}
+.fe.f3 {
+  top: auto;
+  bottom: 0;
+  transform: scaleY(-1);
+}
+.fe.f4 {
+  left: auto;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  transform: scale(-1, -1);
+}
+@keyframes grow {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.ice > :not(i):not(svg):not(.xb) {
+  position: relative;
+  z-index: 3;
+}
+.ice .fr {
+  z-index: 0;
+  opacity: 0.85;
+  -webkit-mask-image: radial-gradient(ellipse 52% 54% at 50% 50%, transparent 74%, #000 100%);
+  mask-image: radial-gradient(ellipse 52% 54% at 50% 50%, transparent 74%, #000 100%);
+}
+.fe {
+  z-index: 0;
+  width: 10cqw;
+  height: 10cqw;
+  opacity: 0.7;
+  stroke-width: 1.6;
+}
+.ice .ic {
+  z-index: 1;
+  display: none !important;
+}
+.ice .fg {
+  z-index: 2;
+}
+.ice {
+  background: linear-gradient(
+    160deg,
+    rgba(40, 100, 170, 0.88),
+    rgba(14, 50, 100, 0.92) 45%,
+    rgba(4, 11, 28, 0.95)
+  ) !important;
+}
+.stage .gate {
+  z-index: 30;
+  pointer-events: auto;
+}
+.wheelbox .xb {
+  top: auto;
+  bottom: 4.8cqw;
+  right: 2cqw;
+}
+.stage .aw {
+  align-items: flex-end;
+  padding: 0 0 8cqw;
+}
+.tk .mqw span {
+  transform: translateZ(0);
+  will-change: transform;
+  font-variant-numeric: tabular-nums;
+}
+.stage .bg,
+.stage .bg.kb {
+  transform: translateZ(0);
+  will-change: transform;
+}

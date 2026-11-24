@@ -1,0 +1,29 @@
+# Dependencies and builds
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.log
+
+# Generated / local-only files
+index.html.html
+repomix-output.xml
+extracted/
+tools/cloudflared/
+
+# Server data: uploaded files and saved show state (stays on the server PC)
+frontend/server-data/
+backend/server-data/
+
+# Show videos over GitHub's 100 MB file limit (kept on this PC only)
+frontend/public/assets/media/m1794886531569k03z.mp4
+frontend/public/assets/media/m1794887099672wm9y.mp4
+frontend/public/assets/media/m17948960954245xmz.mp4
+
+# Secrets and editor files
+.env
+.env.*
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
