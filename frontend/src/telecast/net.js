@@ -31,7 +31,7 @@ const LOCAL = ["edit", "monSound", "monVid", "sfx", "sfxVol"];
 // only the Director's copy is the program that the Live screens show.
 const PLAY = ["yt", "ytStop", "cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "scene", "bgId", "spot", "spotTs", "spotList", "raffle", "sfx", "sfxVol"];
 // show-wide content an Editor may change too (the Director sends it with the rest of the show)
-const SHARED = ["ticker", "defBg", "awards", "awFolders", "awTitle", "pool", "winners", "prize", "rafMusic", "rafName"];
+const SHARED = ["ticker", "defBg", "awards", "awFolders", "awTitle", "awLoc", "pool", "winners", "prize", "rafMusic", "rafName"];
 const pickShared = (o) => Object.fromEntries(SHARED.filter((k) => k in o).map((k) => [k, o[k]]));
 const ROLE = { director: "🎬 Director", editor: "✏ Editor", screen: "📺 Live screen" };
 

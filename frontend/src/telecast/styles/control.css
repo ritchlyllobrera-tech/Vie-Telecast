@@ -1587,3 +1587,21 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
   flex-direction: column;
   gap: 2px;
 }
+
+/* award folders: drag handle, drop line, location picker */
+.awh .dh {
+  align-self: center;
+}
+.awf.dragging {
+  opacity: 0.55;
+}
+.awf.dropb {
+  box-shadow: 0 -3px 0 0 var(--acc, #0891b2);
+}
+.awf.dropa {
+  box-shadow: 0 3px 0 0 var(--acc, #0891b2);
+}
+.awt .awtt .locc {
+  margin-left: 6px;
+  font-size: 0.9em;
+}

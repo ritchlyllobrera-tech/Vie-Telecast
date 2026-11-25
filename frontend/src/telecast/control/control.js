@@ -127,7 +127,7 @@ function buildControl(r) {
  <section class="dpanel" data-p="lib"><div id="upst" class="mut" style="display:none;padding:6px 8px;border:1px dashed var(--acc);border-radius:10px;margin-bottom:8px"></div><div id="lib"></div></section>
  <section class="dpanel" data-p="sfx"><div id="sfx" class="sfxg"></div><div class="row"><button id="fxstop">⏹ Stop effects</button><label class="mut">🔉 Volume <input type="range" id="fxv" min="0" max="100" step="5"></label><label class="b">⬆ Upload effects<input type="file" hidden multiple accept="audio/*,.mp3,.m4a,.wav,.ogg" data-lup="sfx"></label></div><div class="mut" id="fxhelp">Press an effect to play it once, on top of the music. <b>Only your location hears it</b> (this computer and its pop-out Live Screen); other venues are not affected. Effects are played by hand only: they are not part of any segment.</div></section>
  <section class="dpanel" data-p="tk"><h2>Ticker</h2><div class="row"><input class="g" id="tk"><button class="p" id="tkb">Broadcast</button></div><h2 style="margin-top:16px">Default live background</h2><div class="row"><label class="b">🖼 Upload default<input type="file" hidden accept="image/*" id="dbg"></label><button id="dbr">Reset to Vienovo winter</button></div><div class="mut">Shown whenever a segment has no picture of its own.</div></section>
- <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty 10 years)" maxlength="120" style="flex-basis:100%"></div><div class="row"><input class="g" id="aft" placeholder="🏆 Award shown on screen (e.g. 10 Years of Service)" maxlength="120"><button id="afadd">＋ Create folder</button></div><div class="mut">The folder name is for this list only; the Live Screen shows the award.</div>
+ <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty 10 years)" maxlength="120" style="flex-basis:100%"></div><div class="row"><input class="g" id="aft" placeholder="🏆 Award shown on screen (e.g. 10 Years of Service)" maxlength="120" style="flex-basis:100%"></div><div class="row"><select class="g" id="afl" aria-label="Location of the folder"></select><button id="afadd">＋ Create folder</button></div><div class="mut">The folder name is for this list only; the Live Screen shows the award. A folder set to one location is only shown to that location's Editor. Drag ⠿ to change the order.</div>
  <h2 style="margin-top:10px">👤 Awardee</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><select class="g" id="aa" title="Folder the employee goes into"></select><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
  <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div id="al"></div></section>
  <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section>
@@ -251,7 +251,7 @@ function buildControl(r) {
   });
   // folders are named on their own, then employees are added into the picked folder
   B("#afadd", () => {
-    if (createFolder($(r, "#afn").value, $(r, "#aft").value)) {
+    if (createFolder($(r, "#afn").value, $(r, "#aft").value, $(r, "#afl").value)) {
       $(r, "#afn").value = "";
       $(r, "#aft").value = "";
       $(r, "#an").focus();
@@ -276,6 +276,7 @@ function buildControl(r) {
       S.awards = [];
       S.awFolders = [];
       S.awTitle = {};
+      S.awLoc = {};
       S.spot = -1;
       S.spotList = null;
       save();

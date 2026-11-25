@@ -47,6 +47,7 @@ const DEF = {
   awards: [],
   awFolders: [], // award folders in order (an empty folder is kept until employees are added)
   awTitle: {}, // folder name -> the award shown on the Live Screen (the folder name when not set)
+  awLoc: {}, // folder name -> location key (cebu / ncr / cdo); not set = all locations
   pool: "",
   winners: [],
   spot: -1,

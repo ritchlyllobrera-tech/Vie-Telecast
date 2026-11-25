@@ -1,11 +1,50 @@
 /** Employee awards list (card 6): awardees in one folder per award; click an awardee to put them on the Live Screen. */
-import { $, esc, MEDAL, PER } from "../constants.js";
+import { $, esc, MEDAL, PER, LOCS } from "../constants.js";
 import { S, awTitle } from "../state.js";
+import { canControl, myLoc } from "../net.js";
 import { save } from "../sync.js";
 import { now } from "../clock.js";
 
 /** folders closed on this computer (by award name) */
 const shut = new Set();
+
+/* ---------- folder location ----------
+ * A folder can belong to one location (S.awLoc[name] = "cebu" | "ncr" | "cdo"; none = all locations).
+ * An Editor only sees the folders of their own location (and those for all locations);
+ * the Director, and anyone working alone, sees every folder. */
+const SHORT = { cebu: "Cebu", ncr: "NCR", cdo: "CDO" };
+const locOf = (name) => (S.awLoc && LOCS[S.awLoc[name]] ? S.awLoc[name] : "");
+const seesAll = () => canControl() || !myLoc();
+const visible = (name) => seesAll() || !locOf(name) || locOf(name) === myLoc();
+function setLoc(name, loc) {
+  const o = { ...(S.awLoc || {}) };
+  if (LOCS[loc]) o[name] = loc;
+  else delete o[name];
+  S.awLoc = o;
+}
+/** <option>s for a location picker */
+const locOpts = (v) =>
+  `<option value="" ${v ? "" : "selected"}>🌐 All locations</option>` +
+  Object.entries(LOCS)
+    .map(([k, nm]) => `<option value="${k}" ${v === k ? "selected" : ""}>📍 ${esc(nm)}</option>`)
+    .join("");
+const locChip = (name) => {
+  const l = locOf(name);
+  return l
+    ? `<span class="locc l-${l}${l === myLoc() ? " me" : ""}" title="Shown at ${esc(LOCS[l])} only">📍 ${esc(SHORT[l] || LOCS[l])}</span>`
+    : `<span class="locc all" title="Shown at every location">🌐 All</span>`;
+};
+
+/* ---------- drag a folder to change the order ---------- */
+let dragName = "";
+/** move folder `name` before folder `before` ("" = to the end); the order is kept in S.awFolders */
+function moveFolder(name, before) {
+  const all = allFolders().map((f) => f.name).filter((x) => x !== name),
+    at = before ? all.indexOf(before) : -1;
+  all.splice(at < 0 ? all.length : at, 0, name);
+  S.awFolders = all;
+  save();
+}
 /** the folder being renamed on this computer: { name, text } (text = what is typed so far) */
 let ren = null;
 /** the folder new awardees go into (the form's Folder picker), on this computer */
@@ -21,10 +60,11 @@ function setTitle(name, title) {
   S.awTitle = o;
 }
 /** create an (empty) award folder with the award shown on screen; returns false when the name is empty */
-export function createFolder(name, title) {
+export function createFolder(name, title, loc) {
   name = clean(name);
   if (!name) return false;
-  if (!folders().some((f) => f.name === name)) S.awFolders = [...(S.awFolders || []), name];
+  if (!allFolders().some((f) => f.name === name)) S.awFolders = [...(S.awFolders || []), name];
+  setLoc(name, seesAll() ? loc : myLoc()); // an Editor's folders belong to their location
   if (clean(title)) setTitle(name, title);
   cur = name;
   shut.delete(name);
@@ -44,6 +84,7 @@ function deleteFolder(name) {
   S.spot = onScreen ? S.awards.indexOf(onScreen) : -1;
   S.awFolders = (S.awFolders || []).filter((x) => x !== name);
   setTitle(name, "");
+  setLoc(name, "");
   if (S.spotList && S.spotList.award === name) S.spotList = null;
   save();
 }
@@ -57,10 +98,12 @@ function renameFolder(from, to, title) {
     save();
     return true;
   }
-  const into = folders().some((f) => f.name === to);
+  const into = allFolders().some((f) => f.name === to);
   if (into && !confirm(`There is already a folder "${to}". Move the awardees of "${from}" into it?`)) return false;
   if (!into) setTitle(to, title);
   setTitle(from, "");
+  if (!into) setLoc(to, locOf(from));
+  setLoc(from, "");
   for (const a of S.awards) if ((a.award || "Award") === from) a.award = to;
   S.awFolders = (S.awFolders || []).map((x) => (x === from ? to : x)).filter((x, i, a) => a.indexOf(x) === i);
   if (cur === from) cur = to;
@@ -77,8 +120,10 @@ export const medalOpts = (v) =>
     .map(([k, [ic, nm]]) => `<option value="${k}" ${v === k ? "selected" : ""}>${ic} ${nm}</option>`)
     .join("");
 
+/** the folders this computer shows (an Editor: their location's and all-location folders) */
+const folders = () => allFolders().filter((f) => visible(f.name));
 /** awards grouped by award name: created folders first (empty ones too), then any other award names: [{ name, idx: [award indexes] }] */
-function folders() {
+function allFolders() {
   const m = new Map();
   for (const k of S.awFolders || []) m.set(k, []);
   S.awards.forEach((a, i) => {
@@ -138,10 +183,10 @@ export function renderAwards(r) {
         const open = !shut.has(f.name),
           on = f.idx.includes(S.spot) || !!(S.spotList && S.spotList.award === f.name);
         return (
-          `<div class="awf${on ? " on" : ""}"><div class="awh">${
+          `<div class="awf${on ? " on" : ""}" data-fi="${fi}"><div class="awh">${
             ren && ren.name === f.name
-              ? `<span class="awt awren"><label class="mut">📁 Folder name<input class="g" data-rnin="${fi}" value="${esc(ren.text)}" maxlength="120"></label><label class="mut">🏆 Award shown on screen<input class="g" data-rtin="${fi}" value="${esc(ren.title)}" placeholder="Same as the folder name" maxlength="120"></label><span class="row"><button class="p" data-rnok="${fi}" title="Save (Enter)">✔ Save</button><button data-rnno="1" title="Keep the old names (Esc)">Cancel</button></span></span>`
-              : `<button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}<span class="awtt" title="The award shown on the Live Screen">🏆 ${esc(awTitle(f.name))}</span></button><button data-rn="${fi}" title="Edit the folder name and the award shown on screen" aria-label="Edit the ${esc(f.name)} folder">✎</button><button class="d" data-fdel="${fi}" title="Delete this folder and its awardees" aria-label="Delete the ${esc(f.name)} folder">🗑</button>`
+              ? `<span class="awt awren"><label class="mut">📁 Folder name<input class="g" data-rnin="${fi}" value="${esc(ren.text)}" maxlength="120"></label><label class="mut">🏆 Award shown on screen<input class="g" data-rtin="${fi}" value="${esc(ren.title)}" placeholder="Same as the folder name" maxlength="120"></label><label class="mut">📍 Location<select data-rlin="${fi}" ${seesAll() ? "" : "disabled"}>${locOpts(ren.loc)}</select></label><span class="row"><button class="p" data-rnok="${fi}" title="Save (Enter)">✔ Save</button><button data-rnno="1" title="Keep the old names (Esc)">Cancel</button></span></span>`
+              : `<button class="dh" data-fdrag="${fi}" draggable="true" title="Drag to change the folder order (Alt+↑ / Alt+↓ on the keyboard)" aria-label="Move the ${esc(f.name)} folder">⠿</button><button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}<span class="awtt" title="The award shown on the Live Screen">🏆 ${esc(awTitle(f.name))} ${locChip(f.name)}</span></button><button data-rn="${fi}" title="Edit the folder name and the award shown on screen" aria-label="Edit the ${esc(f.name)} folder">✎</button><button class="d" data-fdel="${fi}" title="Delete this folder and its awardees" aria-label="Delete the ${esc(f.name)} folder">🗑</button>`
           }<button data-fnext="${fi}" ${f.idx.length ? "" : "disabled"} title="Show the next awardee of this award, one by one (the first one if none of them is on screen)">▶ Next in folder</button>${listBtns(f, fi)}</div>` +
           (open && !f.idx.length ? '<div class="mut awempty">Empty folder: pick it under Folder above and add employees.</div>' : "") +
           (open
@@ -155,7 +200,10 @@ export function renderAwards(r) {
             : "") +
           "</div>"
         );
-      }).join("") || '<div class="mut">No folders yet. Name a folder above and press ＋ Create folder, then add employees to it.</div>';
+      }).join("") ||
+      (seesAll() || !S.awFolders || !S.awFolders.length
+        ? '<div class="mut">No folders yet. Name a folder above and press ＋ Create folder, then add employees to it.</div>'
+        : `<div class="mut">No folders for ${esc(LOCS[myLoc()] || "your location")} yet. Create one above.</div>`);
   if (al._h !== H) {
     al._h = H;
     al.innerHTML = H;
@@ -176,6 +224,14 @@ export function renderAwards(r) {
     fs.innerHTML = FH;
   }
   if (fs) fs.disabled = !F.length;
+  const fl = $(r, "#afl"),
+    LH = seesAll() ? locOpts(fl ? fl.value : "") : locOpts(myLoc());
+  if (fl && fl._h !== LH + seesAll()) {
+    fl._h = LH + seesAll();
+    fl.innerHTML = LH;
+    fl.disabled = !seesAll();
+    fl.title = seesAll() ? "Where this folder is shown" : "Your folders belong to your location";
+  }
   const ab = $(r, "#aadd");
   if (ab) ab.disabled = !F.length;
   const B = (sel, f) => al.querySelectorAll(sel).forEach(f);
@@ -183,7 +239,7 @@ export function renderAwards(r) {
   B("[data-rn]", (b) => {
     b.onclick = () => {
       const k = F[+b.dataset.rn].name;
-      ren = { name: k, text: k, title: awTitle(k) === k ? "" : awTitle(k) };
+      ren = { name: k, text: k, title: awTitle(k) === k ? "" : awTitle(k), loc: locOf(k) };
       renderAwards(r);
     };
   });
@@ -192,7 +248,14 @@ export function renderAwards(r) {
       ti = al.querySelector("[data-rtin]");
     if (!ren || !inp) return;
     const from = ren.name;
+    const lo = al.querySelector("[data-rlin]"),
+      loc = seesAll() ? (lo ? lo.value : ren.loc) : myLoc() || ren.loc;
     if (renameFolder(from, inp.value, ti ? ti.value : "")) {
+      const nn = clean(inp.value);
+      if (nn) {
+        setLoc(nn, loc);
+        save();
+      }
       ren = null;
       renderAwards(r);
     }
@@ -210,6 +273,7 @@ export function renderAwards(r) {
     };
   });
   B("[data-rnok]", (b) => (b.onclick = rnSave));
+  B("[data-rlin]", (s) => (s.onchange = () => ren && (ren.loc = s.value)));
   B("[data-rnno]", (b) => {
     b.onclick = () => {
       ren = null;
@@ -218,6 +282,69 @@ export function renderAwards(r) {
   });
   if (ren && !F.some((f) => f.name === ren.name)) ren = null; // the folder was removed meanwhile
   B("[data-fdel]", (b) => (b.onclick = () => deleteFolder(F[+b.dataset.fdel].name)));
+  // drag a folder by its ⠿ handle onto another folder: above its middle = before it, below = after it
+  const clearDrop = () => al.querySelectorAll(".awf.dropb, .awf.dropa, .awf.dragging").forEach((x) => x.classList.remove("dropb", "dropa", "dragging"));
+  B("[data-fdrag]", (h) => {
+    const fi = +h.dataset.fdrag;
+    h.ondragstart = (e) => {
+      dragName = F[fi].name;
+      const box = h.closest(".awf");
+      box.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", dragName);
+      try {
+        e.dataTransfer.setDragImage(box, 20, 20);
+      } catch {
+        /* older browsers: default image */
+      }
+    };
+    h.ondragend = () => {
+      dragName = "";
+      clearDrop();
+    };
+    h.onkeydown = (e) => {
+      if (!e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+      e.preventDefault();
+      const k = F[fi].name;
+      if (e.key === "ArrowUp" && fi > 0) moveFolder(k, F[fi - 1].name);
+      else if (e.key === "ArrowDown" && fi < F.length - 1) moveFolder(k, F[fi + 2] ? F[fi + 2].name : "");
+      requestAnimationFrame(() => al.querySelector(`[data-fdrag="${e.key === "ArrowUp" ? Math.max(0, fi - 1) : Math.min(F.length - 1, fi + 1)}"]`)?.focus());
+    };
+  });
+  B(".awf[data-fi]", (box) => {
+    const below = (e) => {
+      const b = box.getBoundingClientRect();
+      return e.clientY > b.top + b.height / 2;
+    };
+    box.ondragover = (e) => {
+      if (!dragName) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const a = below(e);
+      box.classList.toggle("dropa", a);
+      box.classList.toggle("dropb", !a);
+    };
+    box.ondragleave = (e) => {
+      if (!box.contains(e.relatedTarget)) box.classList.remove("dropa", "dropb");
+    };
+    box.ondrop = (e) => {
+      if (!dragName) return;
+      e.preventDefault();
+      const fi = +box.dataset.fi,
+        tgt = F[fi].name,
+        name = dragName;
+      dragName = "";
+      clearDrop();
+      if (tgt === name) return;
+      if (!below(e)) moveFolder(name, tgt);
+      else {
+        // after the target: before the folder that follows it in the full list
+        const all = allFolders().map((f) => f.name).filter((x) => x !== name),
+          nx = all[all.indexOf(tgt) + 1] || "";
+        moveFolder(name, nx);
+      }
+    };
+  });
   B("[data-fold]", (b) => {
     b.onclick = () => {
       const k = F[+b.dataset.fold].name;
