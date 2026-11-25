@@ -63,12 +63,16 @@
       "wheel": false
     },
     {
-      "desc": "Pre-recorded. Every region plays it at the exact same minute.",
+      "desc": "Live from the CEO over Google Meet. The recorded speech is the backup.",
       "time": "17:05",
       "av": false,
       "bg": null,
       "id": "seg-6",
-      "title": "CEO's recorded speech",
+      "title": "CEO's live speech",
+      "call": {
+        "platform": "meet",
+        "link": "https://meet.google.com/xxx-xxxx-xxx"
+      },
       "min": 10,
       "wheel": false
     },
@@ -365,7 +369,7 @@
   },
   "defBg": "",
   "prize": "Sampung Kilong 18g Mix Grains",
-  "savedAt": 1795069746708,
+  "savedAt": 1795498313849,
   "monSound": false,
   "snow": "blizzard",
   "spotTs": 1795048544459,

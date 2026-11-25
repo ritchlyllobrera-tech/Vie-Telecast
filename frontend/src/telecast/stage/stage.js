@@ -1,7 +1,7 @@
 /** The 16:9 broadcast stage (used by both the monitor and the live screen): background, snow, panels, ticker, awards. */
 import { LOGO, BG0, MEDAL, PER, $, esc, fmt, meetLink } from "../constants.js";
-import { S, dedupe, segLeft } from "../state.js";
-import { act, LIVE } from "../sync.js";
+import { S, dedupe, segLeft, ytOn } from "../state.js";
+import { act, LIVE, MINE } from "../sync.js";
 import { url } from "../media.js";
 import { doCmd } from "../playback.js";
 import { drawWheel, reveal, confetti } from "./wheel.js";
@@ -172,6 +172,7 @@ function buildStage(el, live) {
       cv.muted = false;
       cv.play().catch(() => {});
     }
+    if (el._yf && live) ytSound(el);
     if (!el._unl) {
       el._unl = 1;
       try {
@@ -297,7 +298,110 @@ function playSfxOn(el, own) {
     a.play().catch(() => {});
   });
 }
+/**
+ * YouTube Live on the stage: one <iframe>, created once per video id and reused (re-creating it reloads the stream).
+ * It always starts muted (muted autoplay is always allowed, so the picture never stalls on a blocked autoplay);
+ * sound is switched on with the player's postMessage API (unMute / playVideo) from a user click, without a reload.
+ * pointer-events:none keeps double-click fullscreen and the gate working over the player.
+ */
+const YT = "https://www.youtube-nocookie.com";
+function ytCmd(f, fn, args) {
+  try {
+    f.contentWindow.postMessage(JSON.stringify({ event: "command", func: fn, args: args || [] }), YT);
+  } catch {
+    /* frame gone */
+  }
+}
+function ytSound(el) {
+  const f = el._yf;
+  if (!f) return;
+  el._ys = 1;
+  if (el._ysb) {
+    el._ysb.remove();
+    el._ysb = null;
+  }
+  // the player may still be starting: repeat for a few seconds (harmless once it has obeyed)
+  for (const t of [0, 400, 1200, 3000])
+    setTimeout(() => {
+      if (el._yf !== f) return;
+      ytCmd(f, "unMute");
+      ytCmd(f, "setVolume", [100]);
+      ytCmd(f, "playVideo");
+    }, t);
+}
+function ytFrame(el, id, live) {
+  if (!id) {
+    if (el._yf) el._yf.remove();
+    if (el._ysb) el._ysb.remove();
+    el._yf = el._ysb = null;
+    el._yid = "";
+    return;
+  }
+  if (!el._yf || el._yid !== id) {
+    if (el._yf) el._yf.remove();
+    const f = document.createElement("iframe");
+    el._yid = id;
+    el._ys = 0;
+    f.className = "ytf";
+    f.src = `${YT}/embed/${id}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1${live ? "&enablejsapi=1&origin=" + encodeURIComponent(location.origin) : ""}`;
+    f.allow = "autoplay; encrypted-media; fullscreen; picture-in-picture";
+    f.referrerPolicy = "strict-origin-when-cross-origin";
+    f.allowFullscreen = true;
+    f.setAttribute("frameborder", "0");
+    f.title = "YouTube Live";
+    if (live) f.onload = () => el._unl && ytSound(el); // the screen was already clicked: sound straight away
+    el.appendChild(f);
+    el._yf = f;
+  }
+  const want = live && !el._ys;
+  if (want && !el._ysb) {
+    const b = document.createElement("button");
+    b.className = "ytsnd";
+    b.textContent = "🔊 Click to enable sound";
+    b.onclick = (e) => {
+      e.stopPropagation();
+      ytSound(el);
+    };
+    el.appendChild(b);
+    el._ysb = b;
+  } else if (!want && el._ysb) {
+    el._ysb.remove();
+    el._ysb = null;
+  }
+}
+/**
+ * "All sites" broadcast on an Editor's output (their preview and their "MY screen" window): the Director's program is shown by
+ * embedding a real Live screen (#live) over the stage, so it renders exactly like Cebu's. The Editor's own music / video is paused
+ * meanwhile and carries on when the broadcast ends.
+ */
+function bcFrame(el, on) {
+  if (!on) {
+    if (!el._bf) return;
+    el._bf.remove();
+    el._bf = null;
+    const p = el._bcp;
+    el._bcp = null;
+    if (p && p.a && el._a) el._a.play().catch(() => {});
+    if (p && p.v) $(el, "video").play().catch(() => {});
+    return;
+  }
+  if (el._bf) return;
+  const v = $(el, "video"),
+    f = document.createElement("iframe");
+  el._bcp = { a: !!(el._a && !el._a.paused), v: !v.paused };
+  if (el._a) el._a.pause();
+  v.pause();
+  f.className = "bcf";
+  f.src = location.href.split("#")[0] + "#live";
+  f.allow = "autoplay; encrypted-media; fullscreen; picture-in-picture";
+  f.title = "Cebu Director's program";
+  el.appendChild(f);
+  el._bf = f;
+}
 function updateStage(el, own) {
+  const showB = !!S.bc && (MINE || (!LIVE && !canControl()));
+  bcFrame(el, showB);
+  if (showB) return;
   const g = S.segs[S.seg] || S.segs[0],
     sc = S.scene,
     P = $(el, ".panel"),
@@ -335,7 +439,8 @@ function updateStage(el, own) {
     }
   }
   // the call belongs to the program: Live screens and the Director's monitor, not an Editor's own preview
-  const showC = callLive() && (LIVE || canControl()),
+  const showY = ytOn(), // also in an Editor's own preview: their flow is local, see PLAY in net.js
+    showC = callLive() && !showY && !MINE && (LIVE || canControl()),
     cv = $(el, "video.call"),
     cs = showC ? callStream() : null;
   if (cv.srcObject !== cs) {
@@ -372,9 +477,10 @@ function updateStage(el, own) {
       }
     }
   }
-  const showV = !showC && vs && pv && (own || S.monVid !== false);
+  ytFrame(el, showY ? S.yt.id : "", !!LIVE || (own && !canControl()));
+  const showV = !showC && !showY && vs && pv && (own || S.monVid !== false);
   v.muted = el._gate ? true : !own && !S.monSound;
-  el._vid = showV || showC;
+  el._vid = showV || showC || showY;
   $(el, ".snow").style.visibility = el._vid ? "hidden" : "visible";
   $(el, ".bg").classList.toggle("paused", el._vid);
   v.style.display = showV ? "block" : "none";

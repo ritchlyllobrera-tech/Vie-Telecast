@@ -8,15 +8,19 @@ import { dupTab } from "./control/control.js";
 import { render } from "./render.js";
 import { netPush, canControl } from "./net.js";
 
-const LIVE = location.hash === "#live" || window.name === "VienovoLive";
+// MINE = an Editor's "Pop-out MY screen": a live-style window that mirrors THIS computer's own flow (no server link of its own)
+const MINE = location.hash === "#mine" || window.name === "VienovoMine";
+const LIVE = MINE || location.hash === "#live" || window.name === "VienovoLive";
+// pop-outs are same-origin windows: never post to another origin ("null" = file://, which only accepts "*")
+const TO = location.origin === "null" ? "*" : location.origin;
 let liveAt = 0,
   ch = null;
 try {
   ch = new BroadcastChannel("vienovo-telecast-sync-v1");
 } catch (e) {}
 const master = () => LIVE || Date.now() - liveAt > 5000;
-/** Does this window's monitor play the sound / video itself? An Editor's monitor always plays their own flow. */
-const ownOut = () => master() || !canControl();
+/** Does this window's monitor play the sound / video itself? Not while a pop-out (Live screen / MY screen) is open and plays it. */
+const ownOut = () => master();
 const CTL = Math.random().toString(36).slice(2);
 if (!LIVE && ch)
   setTimeout(() => {
@@ -28,7 +32,7 @@ let popWin = null;
 const sendPop = (m) => {
   try {
     // ctl: false = an Editor's private flow, which a Live screen must not show
-    popWin && !popWin.closed && popWin.postMessage({ ...m, ctl: canControl() }, "*");
+    popWin && !popWin.closed && popWin.postMessage({ ...m, ctl: canControl() }, TO);
   } catch (e) {}
 };
 let qt = 0;
@@ -75,7 +79,7 @@ if (ch)
       if (!LIVE && canControl()) doAct(d.a);
     } else if (d.t === "ended") {
       if (!LIVE && canControl()) handleEnded(d.ts);
-    } else if (d.S && LIVE) {
+    } else if (d.S && LIVE && !MINE) {
       if (d.ctl === false) return; // an Editor's private flow
 
       setS(d.S);
@@ -98,7 +102,7 @@ if (LIVE) {
       ch && ch.postMessage({ t: "hb" });
     } catch (e) {}
     try {
-      window.opener && window.opener.postMessage({ t: "hb" }, "*");
+      window.opener && window.opener.postMessage({ t: "hb" }, TO);
     } catch (e) {}
   };
   setInterval(hb, 2000);
@@ -115,15 +119,16 @@ if (LIVE) {
       m = { time: el._a.currentTime, paused: el._a.paused, i: el._i || 0 };
     if (m)
       try {
-        window.opener.postMessage({ t: "pos", ts: c.ts, kind: c.kind, ...m }, "*");
+        window.opener.postMessage({ t: "pos", ts: c.ts, kind: c.kind, ...m }, TO);
       } catch (e) {}
   }, 500);
   try {
-    window.opener && window.opener.postMessage({ t: "ready" }, "*");
+    window.opener && window.opener.postMessage({ t: "ready" }, TO);
   } catch (e) {}
 }
 function popOut() {
-  const w = window.open("", "VienovoLive", "width=1280,height=720");
+  const mine = !canControl(); // an Editor's pop-out mirrors their own flow; the Director's is the Live screen
+  const w = window.open("", mine ? "VienovoMine" : "VienovoLive", "width=1280,height=720");
   if (!w) {
     alert("The pop-out was blocked. Allow pop-ups for this page, then try again.");
     return;
@@ -135,7 +140,7 @@ function popOut() {
       sendPop({ t: "state", S });
       return;
     }
-    w.location.href = location.href.split("#")[0] + "#live";
+    w.location.href = location.href.split("#")[0] + (mine ? "#mine" : "#live");
     w.focus();
   } catch (e) {
     alert("Could not open the live screen window. Use the Fullscreen preview button instead.");
@@ -146,7 +151,7 @@ addEventListener("message", (e) => {
   if (LIVE) {
     if (e.source !== window.opener) return;
     if (d.t === "state" && d.S) {
-      if (d.ctl === false) return; // opened from an Editor's control room: show the Director's program (from the server)
+      if (d.ctl === false && !MINE) return; // a Live screen never shows an Editor's private flow ("MY screen" windows do)
       setS(d.S);
       {
         const ct = d.S.cmd ? d.S.cmd.ts : 0;
@@ -169,13 +174,17 @@ addEventListener("message", (e) => {
     }
     return;
   }
+  if (!popWin && d.t === "hb" && e.source && e.source.name === "VienovoMine" && e.source.opener === window) {
+    // this page was reloaded while the Editor's "MY screen" window stayed open: pick it up again and bring it up to date
+    popWin = e.source;
+    sendPop({ t: "state", S });
+  }
   if (!popWin || e.source !== popWin) return;
   if (d.t === "hb") {
     const was = master();
     liveAt = Date.now();
     if (was) render();
-  } else if (!canControl() && ["act", "pos", "ended"].includes(d.t)) return; // the pop-out shows the Director's program, not ours
-  else if (d.t === "act") doAct(d.a);
+  } else if (d.t === "act") doAct(d.a);
   else if (d.t === "pos") followPop(d);
   else if (d.t === "ended") handleEnded(d.ts);
   else if (d.t === "ready")
@@ -202,7 +211,7 @@ const done = (ts) => {
       ch && ch.postMessage({ t: "ended", ts });
     } catch (e) {}
     try {
-      window.opener && window.opener.postMessage({ t: "ended", ts }, "*");
+      window.opener && window.opener.postMessage({ t: "ended", ts }, TO);
     } catch (e) {}
   } else handleEnded(ts);
 };
@@ -230,7 +239,7 @@ function doAct(a) {
 function act(a) {
   if (LIVE) {
     try {
-      window.opener && window.opener.postMessage({ t: "act", a }, "*");
+      window.opener && window.opener.postMessage({ t: "act", a }, TO);
     } catch (e) {}
     try {
       ch && ch.postMessage({ t: "act", a });
@@ -238,4 +247,4 @@ function act(a) {
   } else doAct(a);
 }
 
-export { LIVE, ch, master, ownOut, sendPop, flush, pending, quiet, save, popOut, done, handleEnded, doAct, act };
+export { LIVE, MINE, ch, master, ownOut, sendPop, flush, pending, quiet, save, popOut, done, handleEnded, doAct, act };

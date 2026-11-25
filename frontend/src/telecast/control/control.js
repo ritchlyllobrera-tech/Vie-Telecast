@@ -1,19 +1,19 @@
 /** Control-room page: header, cards, bindings and per-render refresh. */
 import { exportBackup, importBackup } from "../persistence.js";
 import { $, esc, SCENES, MB, meetLink, meetPlat } from "../constants.js";
-import { S, dedupe, segLeft } from "../state.js";
+import { S, dedupe, segLeft, segYt, ytOn } from "../state.js";
 import { LIVE, ownOut, quiet, save, popOut, doAct } from "../sync.js";
 import { storeFile, mediaButton } from "../media.js";
 import { NET, canControl, renderNet } from "../net.js";
 import { startCall, stopCall, sharing, viewers, callLive, canShare } from "../call.js";
 import { vidPlaying, startRaf } from "../playback.js";
 import { buildStage, updateStage } from "../stage/stage.js";
-import { setSeg, spin, stopSfx, pauseShow, resumeShow, restartShow } from "../actions.js";
+import { setSeg, cmd, playYt, stopYt, endBc, spin, stopSfx, pauseShow, resumeShow, restartShow } from "../actions.js";
 import { renderRundown } from "./rundown.js";
 import { openBulk, refreshBulk } from "./bulk.js";
 import { now } from "../clock.js";
 import { renderAwards, nextAward, medalOpts } from "./awards.js";
-import { renderEditor } from "./editor.js";
+import { renderEditor, setDrawer, drawerOpen, openPanel, curPanel } from "./editor.js";
 import { renderLibrary, renderSfx } from "./library.js";
 
 const togglePlay = () => (S.running ? pauseShow() : resumeShow());
@@ -128,21 +128,45 @@ function medalOf(t) {
 }
 /* control UI */
 function buildControl(r) {
-  r.innerHTML = `<div class="aur"></div><header><h1>🎄 VIENOVO TELECAST CONTROL · YEAR END &amp; CHRISTMAS 2026</h1><div class="row"><span id="net" class="row"></span><span class="live-dot"></span><b id="clk" class="tm"></b><span class="mut" id="sv">✔ Auto-saved</span>
- <label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label><label class="mut"><input type="checkbox" id="mvid"> 🎬 Monitor plays video</label><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label><label class="mut"><input type="checkbox" id="auto"> Auto-Pilot (starts segments at their set times)</label><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button><button class="p" id="pop">Pop-out Live Screen ↗</button><button id="fs">⛶ Fullscreen preview</button><button id="dlh" class="dir" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b dir" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></header>
- <main><section class="card wide"><h2 id="montl">Live program monitor</h2><div class="showctl"><button class="p" id="go"></button><button id="rst" title="Start again from segment 1">⏮ Restart from segment 1</button><span id="shst"></span></div><div id="callbar" class="row callbar"></div><div style="max-width:880px;margin:auto"><div id="prev"></div></div><div class="row" style="justify-content:center"><span id="scenes"></span></div><div id="rem" style="text-align:center;font-weight:700;color:var(--acc);margin-top:6px"></div><div id="nxb" class="row" style="display:none;justify-content:center;padding:8px;border:1px dashed var(--acc);border-radius:12px"><b></b><button class="p" id="nxnow">Start now</button><button id="nxhold">Hold</button></div><div class="mut" id="np" style="text-align:center;min-height:1.3em"></div><div class="row dir" style="justify-content:center;margin-top:8px;padding:8px;border:1px solid var(--line);border-radius:12px"><input id="qprize" placeholder="🎁 Prize for this spin" style="min-width:240px"><button class="p" id="qspin">🎡 Spin</button><button id="qnext">✔ Next round</button></div></section>
- <section class="card"><h2>1 · Rundown &amp; schedule</h2><div id="rd"></div><div class="row"><button id="pv">◀ Prev</button><button class="p" id="nx" title="Finished early? Go straight to the next segment (shortcut: → key)">✔ Finish &amp; next segment ▶</button></div><div class="row"><button id="bulkb" title="Add, replace or remove the same music, videos or photos in many segments (e.g. all three locations) at once">🔁 Change media in many segments</button></div><div class="mut">✎ edits a segment · ▶ takes it live · ✔ Finish &amp; next skips ahead when a segment ends early (or press the → key). With Auto-Pilot, a segment starts at its set clock time. 1 min 30 s before a segment ends you get a warning; when its time is up it asks you (or moves on by itself, if set in the Segment editor).</div></section>
- <section class="card"><h2>2 · Media library</h2><div id="upst" class="mut" style="display:none;padding:6px 8px;border:1px dashed var(--acc);border-radius:10px;margin-bottom:8px"></div><div id="lib"></div></section>
- <section class="card"><h2>3 · Segment editor</h2><div id="ed"></div></section>
- <section class="card"><h2>4 · Sound effects</h2><div id="sfx" class="sfxg"></div><div class="row"><button id="fxstop">⏹ Stop effects</button><label class="mut">🔉 Volume <input type="range" id="fxv" min="0" max="100" step="5"></label><label class="b">⬆ Upload effects<input type="file" hidden multiple accept="audio/*,.mp3,.m4a,.wav,.ogg" data-lup="sfx"></label></div><div class="mut" id="fxhelp">Press an effect to play it once, on top of the music. <b>Only your location hears it</b> (this computer and its pop-out Live Screen); other venues are not affected. Effects are played by hand only: they are not part of any segment.</div></section>
- <section class="card dir"><h2>5 · Ticker</h2><div class="row"><input class="g" id="tk"><button class="p" id="tkb">Broadcast</button></div><h2 style="margin-top:12px">Default live background</h2><div class="row"><label class="b">🖼 Upload default<input type="file" hidden accept="image/*" id="dbg"></label><button id="dbr">Reset to Vienovo winter</button></div><div class="mut">Shown whenever a segment has no picture of its own.</div></section>
- <section class="card dir"><h2>6 · Employee awards</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><input class="g" id="aa" placeholder="Award (e.g. Sales Awardee)" list="awl"><datalist id="awl"></datalist><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
+  r.innerHTML = `<div class="aur"></div><header id="top"><button id="sidet" title="Show the rundown" aria-label="Show the rundown">☰ Rundown</button><div class="brand"><span class="bmark">🎄</span><div><h1>VIENOVO TELECAST</h1><small>Control room · Year End &amp; Christmas 2026</small></div></div><span id="net" class="row"></span><div class="showctl"><button class="p" id="go"></button><button id="rst" title="Start again from segment 1">⏮ Restart</button><span id="shst"></span></div><span class="sp"></span><b id="clk" class="tm"></b><span class="live-dot"></span><span class="mut" id="sv">✔ Auto-saved</span><button class="p" id="pop">Pop-out Live Screen ↗</button><button id="fs" title="Fullscreen preview of the monitor">⛶<span class="lbl"> Fullscreen</span></button></header>
+ <aside id="side" aria-label="Rundown"><div class="shead"><h2 title="✎ edits a segment · ▶ takes it live · ✔ Finish &amp; next skips ahead when a segment ends early (or press the → key). With Auto-Pilot, a segment starts at its set clock time. 1 min 30 s before a segment ends you get a warning; when its time is up it asks you (or moves on by itself, if set in the Segment editor).">Rundown</h2><button id="sidec" title="Hide / show the segment list" aria-label="Hide or show the segment list">«</button></div><div id="rd"></div><div class="sfoot"><button id="pv">◀ Prev</button><button class="p g" id="nx" title="Finished early? Go straight to the next segment (shortcut: → key)">✔ Finish &amp; next ▶</button><button id="bulkb" title="Add, replace or remove the same music, videos or photos in many segments (e.g. all three locations) at once">🔁 Bulk media</button></div></aside>
+ <main id="center"><section id="mon"><div class="monh"><h2 id="montl">Live program monitor</h2><span class="mut" id="np"></span></div><div id="callbar" class="row callbar"></div><div id="prevwrap"><div id="prev"></div></div><div class="below"><div class="row scn"><span id="scenes"></span></div><div class="row tmr"><span id="rem"></span></div><div id="nxb" class="row"><b></b><button class="p" id="nxnow">Start now</button><button id="nxhold">Hold</button></div><div id="quick" class="row dir" hidden><span id="qwheel" class="row" hidden><input id="qprize" placeholder="🎁 Prize for this spin"><button class="p" id="qspin">🎡 Spin</button><button id="qnext">✔ Next round</button></span><span id="qaw" class="row" hidden><button class="p" id="qanx">⏭ Next award</button></span></div></div></section></main>
+ <nav id="rail" aria-label="Tools"><button data-panel="lib" title="Media library"><i>🎞</i><span>Media</span><em class="bdg" id="bg-lib"></em></button><button data-panel="sfx" title="Sound effects"><i>🔊</i><span>Effects</span></button><button data-panel="tk" class="dir" title="Ticker &amp; default live background"><i>📰</i><span>Ticker</span></button><button data-panel="aw" class="dir" title="Employee awards"><i>🏅</i><span>Awards</span><em class="bdg" id="bg-aw"></em></button><button data-panel="raf" class="dir" title="Grand raffle"><i>🎡</i><span>Raffle</span><em class="bdg" id="bg-raf"></em></button><button data-panel="ed" title="Segment editor"><i>✎</i><span>Segment</span></button><span class="sp"></span><button data-panel="set" title="Show settings, snow, backup"><i>⚙</i><span>Settings</span></button></nav>
+ <aside id="drawer" aria-labelledby="dtitle"><div class="dhead"><b id="dtitle">Segment settings</b><button id="dclose" title="Close (Esc)" aria-label="Close">✕</button></div><div class="dbody">
+ <section class="dpanel" data-p="lib"><div id="upst" class="mut" style="display:none;padding:6px 8px;border:1px dashed var(--acc);border-radius:10px;margin-bottom:8px"></div><div id="lib"></div></section>
+ <section class="dpanel" data-p="sfx"><div id="sfx" class="sfxg"></div><div class="row"><button id="fxstop">⏹ Stop effects</button><label class="mut">🔉 Volume <input type="range" id="fxv" min="0" max="100" step="5"></label><label class="b">⬆ Upload effects<input type="file" hidden multiple accept="audio/*,.mp3,.m4a,.wav,.ogg" data-lup="sfx"></label></div><div class="mut" id="fxhelp">Press an effect to play it once, on top of the music. <b>Only your location hears it</b> (this computer and its pop-out Live Screen); other venues are not affected. Effects are played by hand only: they are not part of any segment.</div></section>
+ <section class="dpanel dir" data-p="tk"><h2>Ticker</h2><div class="row"><input class="g" id="tk"><button class="p" id="tkb">Broadcast</button></div><h2 style="margin-top:16px">Default live background</h2><div class="row"><label class="b">🖼 Upload default<input type="file" hidden accept="image/*" id="dbg"></label><button id="dbr">Reset to Vienovo winter</button></div><div class="mut">Shown whenever a segment has no picture of its own.</div></section>
+ <section class="dpanel dir" data-p="aw"><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><input class="g" id="aa" placeholder="Award (e.g. Sales Awardee)" list="awl"><datalist id="awl"></datalist><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
  <textarea id="acsv" placeholder="Paste CSV: Name, Award, Medal (one per line; medal is optional: gold, silver or bronze)"></textarea><div class="row"><button id="aimp">Import CSV</button><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div id="al"></div></section>
- <section class="card dir"><h2>7 · Grand raffle</h2><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section></main>
+ <section class="dpanel dir" data-p="raf"><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section>
+ <section class="dpanel" data-p="ed"><div id="ed"></div></section>
+ <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="mvid"> 🎬 Monitor plays video</label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> Auto-Pilot (starts segments at their set times)</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
+ </div></aside><div id="dback"></div>
  <div id="segend" class="cue" hidden role="status"><div class="cuetop"><span class="cueic">⏳</span><b class="cuec tm" data-c></b><div class="cuetx"><b data-g></b><span data-n></span></div></div><div class="cuebar"><i></i></div><div class="row"><button id="cue1">+1 min</button><button class="p" id="cuenx">Next segment now ▶</button></div></div>
  <div id="tup" hidden role="alertdialog" aria-labelledby="tuph"><h3 id="tuph">⏰ Time is up</h3><div class="mut" data-tt></div><div class="row"><button class="p" id="tupgo"></button></div><div class="row"><button id="tup1">+1 min</button><button id="tup5">+5 min</button><button id="tupstay">Stay on this segment</button></div></div>`;
   buildStage($(r, "#prev"), 0);
+  // the segment list is a left sidebar (collapsible; the choice is remembered on this computer)
+  r.classList.add("cshell");
+  const sideOff = (on) => {
+    document.body.classList.toggle("side-off", on);
+    $(r, "#sidec").textContent = on ? "»" : "«";
+  };
+  sideOff(localStorage.getItem("vtc_side_off") === "1");
+  $(r, "#sidec").onclick = () => {
+    const on = !document.body.classList.contains("side-off");
+    sideOff(on);
+    localStorage.setItem("vtc_side_off", on ? "1" : "0");
+  };
   const B = (s, f) => ($(r, s).onclick = f);
+  // narrow screens: the rundown is an overlay
+  B("#sidet", () => document.body.classList.toggle("side-open"));
+  $(r, "#center").addEventListener("click", () => document.body.classList.remove("side-open"));
+  // right-hand rail: one drawer panel at a time (the editor, opened with the rundown's ✎, uses the same drawer)
+  r.querySelectorAll("#rail [data-panel]").forEach(
+    (b) => (b.onclick = () => openPanel(curPanel() === b.dataset.panel ? "" : b.dataset.panel)),
+  );
+  document.addEventListener("vtc-panel", () => syncDrawer(r));
+  B("#qanx", nextAward);
   $(r, "#auto").onchange = (e) => {
     S.auto = e.target.checked;
     save();
@@ -167,14 +191,14 @@ function buildControl(r) {
   B("#rst", (e) => {
     if (rst) {
       rst = 0;
-      e.target.textContent = "⏮ Restart from segment 1";
+      e.target.textContent = "⏮ Restart";
       restartShow();
     } else {
       rst = 1;
       e.target.textContent = "Click again to restart";
       setTimeout(() => {
         rst = 0;
-        e.target.textContent = "⏮ Restart from segment 1";
+        e.target.textContent = "⏮ Restart";
       }, 3000);
     }
   });
@@ -184,6 +208,11 @@ function buildControl(r) {
     quiet();
   };
   B("#pop", popOut);
+  B("#dclose", () => setDrawer(false));
+  B("#dback", () => setDrawer(false));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && drawerOpen()) setDrawer(false);
+  });
   B("#bulkb", openBulk);
   mediaButton($(r, "#msave"));
   B("#dlh", exportBackup);
@@ -269,6 +298,7 @@ function buildControl(r) {
   });
   B("#wshow", () => {
     S.scene = "spin-wheel";
+    S.yt = null;
     startRaf();
     save();
   });
@@ -349,9 +379,21 @@ function renderCallBar(r) {
     c = g.call || {},
     link = meetLink(c.link),
     plat = PLAT[meetPlat(link) || c.platform] || "Meeting",
-    open = link ? `<button data-callopen="1" title="${esc(link)}">🔗 Open ${esc(plat)} meeting</button>` : "";
+    open = link ? `<button data-callopen="1" title="${esc(link)}">🔗 Open ${esc(plat)} meeting</button>` : "",
+    yid = segYt(g), // this segment is a YouTube Live one: it has its own bar (the meeting options are not mixed in)
+    yon = ytOn(),
+    backup = g.vid && g.vid[0] ? `<button id="ytvid" title="Stops YouTube Live and plays this segment's first video on the screens">▶ Recorded video instead</button>` : "";
   let H;
-  if (canControl()) {
+  if (S.bc && canControl() && !sharing()) {
+    // broadcasting to every site: one status and at most two buttons
+    H = `<span class="st on">📡 ALL sites${yon ? " · 📺 YouTube Live" : ""}: ${esc(g.title || S.bc.title || "")}</span><button class="pause" id="bcend">⏹ End broadcast</button>${yon ? backup : ""}`;
+  } else if (yid && !sharing() && (yon || S.ytStop === g.id)) {
+    // YouTube Live runs in this computer's own flow (the Director's for the Live screens, an Editor's for their own preview / projector).
+    // "Stopped / Resume" only shows after it was stopped on purpose.
+    H = yon
+      ? `<span class="st on">📺 YouTube Live playing ${canControl() ? "on this site's screens" : "here"}</span><button class="pause" id="ytstop">⏹ Stop</button>${backup}`
+      : `<span class="g mut">📺 <b>YouTube Live</b> · stopped</span><button class="p" id="ytplay">▶ Resume YouTube Live</button>${backup}`;
+  } else if (canControl()) {
     // remote Live screens (not this computer's own pop-out, which gets the picture directly)
     const screens = NET.on ? NET.users.filter((u) => u.role === "screen" && u.name !== NET.you.name + " (screen)").length : 0,
       rx = viewers(),
@@ -360,7 +402,9 @@ function renderCallBar(r) {
         : "";
     H = sharing()
       ? `<span class="st on">📡 CALL ON AIR${recv}${S.call && !S.call.audio ? " · ⚠ no sound shared" : ""}</span>${open}<button class="pause" id="callstop">⏹ Stop sharing the call</button>`
-      : `<span class="g mut">📞 <b>Live call</b> ${link ? "· " + esc(plat) + " link set for this segment" : c.link ? "· ⚠ the meeting link in this segment is not valid (fix it in the Segment editor)" : "· no meeting link in this segment (add it in the Segment editor)"}</span>${open}${
+      : !link && !c.link
+        ? "" // nothing to share: no bar
+        : `<span class="g mut">📞 <b>Live call</b> ${link ? "· " + esc(plat) + " link set for this segment" : c.link ? "· ⚠ the meeting link in this segment is not valid (fix it in the Segment editor)" : "· no meeting link in this segment (add it in the Segment editor)"}</span>${open}${
           canShare()
             ? `<button class="p" id="callgo" title="Pick the browser tab with the meeting. Tick 'Also share tab audio'.">📡 Share call to Live Screens</button>`
             : `<button class="warnb" id="callgo" title="This address can't share a tab">⚠ Sharing blocked on this address: how to fix</button>`
@@ -372,22 +416,71 @@ function renderCallBar(r) {
         ? `<span class="g mut">📞 This segment has a ${esc(plat)} call. The Director will share it to the Live Screens. If it doesn't reach your location, open the meeting here.</span>${open}`
         : "";
   }
+  // an Editor sees that Cebu's program is on their output
+  if (S.bc && !canControl())
+    H = `<span class="st on">📡 Cebu Director is playing ${esc(S.bc.title || "the program")} on all sites. Your own show carries on underneath and returns when it ends.</span>` + H;
   if (bar._h !== H) {
     bar._h = H;
     bar.innerHTML = H;
   }
   bar.style.display = H ? "" : "none";
+  const be = bar.querySelector("#bcend");
+  if (be) be.onclick = endBc;
   const o = bar.querySelector("[data-callopen]");
   if (o) o.onclick = () => window.open(link, "_blank", "noopener");
   const go = bar.querySelector("#callgo");
   if (go) go.onclick = startCall;
+  const yp = bar.querySelector("#ytplay");
+  if (yp) yp.onclick = playYt;
+  const ys = bar.querySelector("#ytstop");
+  if (ys) ys.onclick = stopYt;
+  const yv = bar.querySelector("#ytvid");
+  if (yv)
+    yv.onclick = () => {
+      S.yt = null;
+      S.ytStop = g.id;
+      cmd("vid", "play", [g.vid[0]]);
+    };
   const st = bar.querySelector("#callstop");
   if (st) st.onclick = stopCall;
+}
+const PANELS = { lib: "Media library", sfx: "Sound effects", tk: "Ticker & background", aw: "Employee awards", raf: "Grand raffle", set: "Settings" };
+/** drawer title + highlighted rail button for the open panel */
+function syncDrawer(r) {
+  const p = curPanel();
+  let t = PANELS[p] || "";
+  if (p === "ed") t = "Segment: " + ((S.segs[S.edit] || {}).title || "");
+  setTx($(r, "#dtitle"), t);
+  r.querySelectorAll("#rail [data-panel]").forEach((b) => {
+    b.classList.toggle("on", b.dataset.panel === p);
+    b.setAttribute("aria-pressed", b.dataset.panel === p ? "true" : "false");
+  });
 }
 function renderControl(r) {
   document.body.classList.toggle("role-editor", !canControl());
   renderNet($(r, "#net"));
   renderCallBar(r);
+  syncDrawer(r);
+  {
+    const p = $(r, "#pop");
+    setTx(p, canControl() ? "Pop-out Live Screen ↗" : "Pop-out my screen ↗");
+    p.title = canControl() ? "Opens the Live Screen for all Cebu screens" : "Opens this site's projector screen";
+    const g = S.segs[S.seg] || {},
+      wheel = !!g.wheel || S.scene === "spin-wheel",
+      aw = S.spot >= 0 || /award/i.test(g.title || ""),
+      q = $(r, "#quick");
+    $(r, "#qwheel").hidden = !wheel;
+    $(r, "#qaw").hidden = !aw;
+    q.hidden = !(wheel || aw);
+    const bd = (id, n) => {
+      const e = $(r, id);
+      setTx(e, n ? String(n) : "");
+      e.hidden = !n;
+    };
+    bd("#bg-lib", S.lib.filter((m) => m.kind !== "sfx").length);
+    bd("#bg-aw", S.awards.length);
+    bd("#bg-raf", dedupe(S.pool).length);
+  }
   refreshBulk();
   {
     const go = $(r, "#go"),
@@ -408,6 +501,7 @@ function renderControl(r) {
           : "Not started: nothing plays until you press Start (or the Space key)."
         : (state === "on" ? (mine ? "● PLAYING HERE" : "● ON AIR") : "⏸ PAUSED") + " · Segment " + (S.seg + 1) + ": " + g.title,
     );
+    st.title = st.textContent;
   }
   $(r, "#auto").checked = S.auto;
   $(r, "#msnd").checked = !!S.monSound;
@@ -433,6 +527,7 @@ function renderControl(r) {
     (b) =>
       (b.onclick = () => {
         S.scene = b.dataset.s;
+        S.yt = null; // any other scene button takes YouTube Live off the screens
         save();
       }),
   );
@@ -442,7 +537,7 @@ function renderControl(r) {
   if (document.activeElement !== $(r, "#fxv")) $(r, "#fxv").value = String(Math.round((S.sfxVol ?? 1) * 100));
   {
     const a = document.activeElement;
-    if (!r.contains(a) || !(a.dataset.f || a.dataset.cf)) renderEditor(r);
+    if (!r.contains(a) || !(a.dataset.f || a.dataset.cf || a.dataset.yt)) renderEditor(r);
   }
   if (document.activeElement !== $(r, "#tk")) $(r, "#tk").value = S.ticker;
   renderAwards(r);

@@ -840,6 +840,39 @@ body.live .stage .ctr {
     transform: scale(1.08);
   }
 }
+.stage .ytf {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+  z-index: 3;
+  pointer-events: none;
+}
+.stage .ytsnd {
+  position: absolute;
+  right: 2cqw;
+  bottom: 6cqw;
+  z-index: 40;
+  padding: 0.6em 1.1em;
+  font-size: 1.6cqw;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(220, 38, 38, 0.92);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.stage .bcf {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+  z-index: 50;
+}
 
 /* an award's awardees, 8 names per page (two columns of four; PER in constants.js) */
 .ac.al {

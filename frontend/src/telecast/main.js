@@ -8,7 +8,7 @@
  */
 import { DEF } from "./constants.js";
 import { S, setS, fixSegs } from "./state.js";
-import { LIVE } from "./sync.js";
+import { LIVE, MINE } from "./sync.js";
 import { tx } from "./media.js";
 import { render } from "./render.js";
 import { loadInitialState } from "./persistence.js";
@@ -23,7 +23,8 @@ export function startTelecast() {
   // read-only copy of the current state, for checking a screen from the browser console / tests
   window.vtcState = () => JSON.parse(JSON.stringify(S));
   render();
-  netStart(); // multi-user mode when the Telecast server is running (otherwise: this computer only)
+  // multi-user mode when the Telecast server is running (otherwise: this computer only); an Editor's "MY screen" window gets its state from the control room that opened it
+  if (!MINE) netStart();
   if (LIVE) return;
   loadInitialState();
   holdOnOpen(); // opening the page never starts the program (nor an Editor's own flow) - use Start / Resume

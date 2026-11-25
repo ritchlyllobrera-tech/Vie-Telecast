@@ -29,7 +29,7 @@ const CK = "vtc_user";
 const LOCAL = ["edit", "monSound", "monVid", "sfx", "sfxVol"];
 // what is playing / on screen. An Editor runs their own flow with these on their own computer;
 // only the Director's copy is the program that the Live screens show.
-const PLAY = ["cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "scene", "bgId", "spot", "spotTs", "spotList", "raffle", "sfx", "sfxVol"];
+const PLAY = ["yt", "ytStop", "cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "scene", "bgId", "spot", "spotTs", "spotList", "raffle", "sfx", "sfxVol"];
 const ROLE = { director: "🎬 Director", editor: "✏ Editor", screen: "📺 Live screen" };
 
 // samePc: this browser runs on the computer that runs the server (it can switch to http://localhost)
@@ -39,7 +39,7 @@ let ws = null,
   denied = false,
   firstWelcome = true,
   retry = 0,
-  base = { show: "", segs: {}, lib: new Map() };
+  base = { order: "", show: "", segs: {}, lib: new Map() };
 
 export function storedCreds() {
   try {
@@ -194,6 +194,7 @@ const shareable = () => {
 function snapshot() {
   const { segs, lib, ...rest } = shareable();
   base = {
+    order: segs.map((g) => g.id).join(),
     show: JSON.stringify(rest),
     segs: Object.fromEntries(segs.map((g) => [g.id, JSON.stringify(g)])),
     lib: new Map(lib.map((x) => [x.id, JSON.stringify(x)])),
@@ -244,6 +245,11 @@ export function netPush() {
       netSend({ t: "seg-del", id });
       delete base.segs[id];
     }
+  if (segs.map((g) => g.id).join() !== base.order) {
+    // segments were dragged to a new position (after any added / deleted ones, before the show update)
+    base.order = segs.map((g) => g.id).join();
+    netSend({ t: "seg-order", ids: segs.map((g) => g.id) });
+  }
   if (role === "director") {
     const j = JSON.stringify(rest);
     if (j !== base.show) {

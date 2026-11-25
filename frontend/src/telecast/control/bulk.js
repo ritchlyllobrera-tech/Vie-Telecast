@@ -97,10 +97,10 @@ function draw() {
     used = lib.filter((m) => ticked().some((g) => (g[k] || []).includes(m.id))),
     aff = affected(),
     nUse = (id) => ticked().filter((g) => (g[k] || []).includes(id)).length,
-    opt = (m, sel, n) => `<option value="${m.id}" ${sel === m.id ? "selected" : ""}>${esc(bare(m.name))}${n ? " · in " + n + " segment" + (n > 1 ? "s" : "") : ""}</option>`;
+    opt = (m, sel, n) => `<option value="${esc(m.id)}" ${sel === m.id ? "selected" : ""}>${esc(bare(m.name))}${n ? " · in " + n + " segment" + (n > 1 ? "s" : "") : ""}</option>`;
   const what =
     st.act === "add"
-      ? `<div class="bpk">${lib.length ? lib.map((m) => `<label class="pki${st.picks.has(m.id) ? " on" : ""}"><input type="checkbox" data-pk="${m.id}" ${st.picks.has(m.id) ? "checked" : ""}> <span class="g">${esc(bare(m.name))}</span></label>`).join("") : '<div class="mut">Nothing of this kind in the Media library yet.</div>'}</div>`
+      ? `<div class="bpk">${lib.length ? lib.map((m) => `<label class="pki${st.picks.has(m.id) ? " on" : ""}"><input type="checkbox" data-pk="${esc(m.id)}" ${st.picks.has(m.id) ? "checked" : ""}> <span class="g">${esc(bare(m.name))}</span></label>`).join("") : '<div class="mut">Nothing of this kind in the Media library yet.</div>'}</div>`
       : `<div class="row"><select data-from class="g"><option value="">${st.act === "replace" ? "Replace…" : "Remove…"}</option>${used.map((m) => opt(m, st.from, nUse(m.id))).join("")}</select>${
           st.act === "replace"
             ? `<span>with</span><select data-to class="g"><option value="">…choose the new one</option>${lib.filter((m) => m.id !== st.from).map((m) => opt(m, st.to)).join("")}</select>`
@@ -123,7 +123,7 @@ function draw() {
    .map((g) => {
      const i = S.segs.indexOf(g),
        hit = aff.includes(g);
-     return `<label class="row bsr${hit ? " hit" : ""}"><input type="checkbox" data-seg="${g.id}" ${st.segs.has(g.id) ? "checked" : ""}><span class="g">${i + 1}. ${esc(g.title)}</span>${NET.on ? `<span class="mut">${esc(locName(g.loc))}</span>` : ""}<span class="mut">${(g[k] || []).length} ${k === "aud" ? "songs" : k === "vid" ? "videos" : "photos"}</span>${hit ? '<b class="okc">will change</b>' : ""}</label>`;
+     return `<label class="row bsr${hit ? " hit" : ""}"><input type="checkbox" data-seg="${esc(g.id)}" ${st.segs.has(g.id) ? "checked" : ""}><span class="g">${i + 1}. ${esc(g.title)}</span>${NET.on ? `<span class="mut">${esc(locName(g.loc))}</span>` : ""}<span class="mut">${(g[k] || []).length} ${k === "aud" ? "songs" : k === "vid" ? "videos" : "photos"}</span>${hit ? '<b class="okc">will change</b>' : ""}</label>`;
    })
    .join("")}</div>
  ${st.msg ? `<div class="bmsg">${esc(st.msg)}</div>` : ""}

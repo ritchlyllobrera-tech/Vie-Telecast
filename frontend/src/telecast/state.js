@@ -1,6 +1,6 @@
 /** The single show state object `S` (persisted to localStorage) and helpers that normalise it. */
 import BUNDLED from "../data/mediaManifest.json";
-import { K, DEF, norm } from "./constants.js";
+import { K, DEF, norm, ytId } from "./constants.js";
 import { now } from "./clock.js";
 
 let S;
@@ -67,4 +67,8 @@ export function setS(v) {
   S = v;
 }
 
-export { S, fixSegs, dedupe };
+/** The YouTube Live video id of a segment: its own link field, or an older Live-call entry set to YouTube ("" = none). */
+const segYt = (g) => ytId(g && g.yt) || (g && g.call && g.call.platform === "youtube" ? ytId(g.call.link) : "");
+/** YouTube Live is playing on the screens: started for the segment that is on air now (any other segment stops it). */
+const ytOn = () => !!(S.yt && S.yt.id && S.segs[S.seg] && S.yt.seg === S.segs[S.seg].id);
+export { S, fixSegs, dedupe, segYt, ytOn };

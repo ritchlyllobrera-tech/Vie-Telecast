@@ -51,7 +51,7 @@ async function load(id) {
     u = await new Promise((ok) => {
       pend[id] = ok;
       try {
-        window.opener.postMessage({ t: "need", id }, "*");
+        window.opener.postMessage({ t: "need", id }, location.origin === "null" ? "*" : location.origin);
       } catch (x) {
         ok("");
       }
@@ -75,7 +75,8 @@ function upMsg(h) {
 /** Upload files once into the shared media library (kind: aud | vid | img | sfx). */
 async function uploadToLib(kind, files) {
   let ok = 0,
-    sz = 0;
+    sz = 0,
+    big = false;
   const fail = [],
     skip = [];
   for (let k = 0; k < files.length; k++) {
@@ -108,13 +109,14 @@ async function uploadToLib(kind, files) {
       sz += f.size;
     } catch (e) {
       fail.push(f.name);
+      if (e && /too large/i.test(e.message)) big = true;
     }
   }
   save();
   upMsg(
     (ok ? "\u2714 " + ok + " file" + (ok > 1 ? "s" : "") + " added to the library (" + MB(sz) + "). " : "") +
       (skip.length ? "Already in the library: " + skip.map(esc).join(", ") + ". " : "") +
-      (fail.length ? "\u26a0 Not saved: " + fail.map(esc).join(", ") : ""),
+      (fail.length ? "\u26a0 Not saved: " + fail.map(esc).join(", ") + (big ? " (file too large for this server)" : "") : ""),
   );
   if (!fail.length) setTimeout(() => upMsg(""), 7000);
 }
