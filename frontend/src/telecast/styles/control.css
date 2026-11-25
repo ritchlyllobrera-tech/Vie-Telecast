@@ -1526,3 +1526,33 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
     z-index: 55;
   }
 }
+
+/* select several media files / sound effects to delete at once */
+.pickbar {
+  margin: 6px 0;
+}
+.pickbar.on {
+  padding: 4px 6px;
+  border: 1px dashed var(--acc);
+  border-radius: 10px;
+}
+.sfxg > .pickbar {
+  grid-column: 1 / -1;
+}
+.pkrow {
+  cursor: pointer;
+}
+.pkrow .pkc {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0 4px 0 0;
+  accent-color: var(--acc);
+}
+.sfxw.pkrow {
+  display: flex;
+  align-items: center;
+}
+.sfxw.pkrow .sfxb {
+  flex: 1;
+}
