@@ -566,7 +566,8 @@ function updateStage(el, own) {
     if (el._ak !== key) {
       el._ak = key;
       const long = Math.max(...names.map((x) => x.name.length), 1),
-        fs = Math.max(1.5, Math.min(2.6, 46 / long));
+        rows = Math.ceil(names.length / 2), // two columns, filled top to bottom
+        fs = rows > 4 ? Math.max(1.2, Math.min(1.9, 36 / long)) : Math.max(1.5, Math.min(2.6, 46 / long));
       aw.innerHTML =
         '<div class="ac ice al"><i class="fr"></i><i class="ic"></i>' +
         FE +
@@ -577,12 +578,14 @@ function updateStage(el, own) {
         (pg * PER + 1) +
         '" style="font-size:' +
         fs +
-        'cqw">' +
+        "cqw;grid-template-rows:repeat(" +
+        rows +
+        ',auto)">' +
         names
           .map(
             (x, n) =>
               '<li style="animation-delay:' +
-              (0.35 + n * 0.12) +
+              (0.35 + n * (names.length > 8 ? 0.06 : 0.12)) +
               's"><span>' +
               (MEDAL[x.medal] ? MEDAL[x.medal][0] + " " : "") +
               esc(x.name) +

@@ -874,7 +874,7 @@ body.live .stage .ctr {
   z-index: 50;
 }
 
-/* an award's awardees, 8 names per page (two columns of four; PER in constants.js) */
+/* an award's awardees, up to 20 names per page (two columns, rows set by stage.js; PER in constants.js) */
 .ac.al {
   width: 76cqw;
 }
@@ -882,8 +882,7 @@ body.live .stage .ctr {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-auto-flow: column;
-  grid-template-rows: repeat(4, auto);
-  gap: 1cqw 3cqw;
+  gap: 0.45cqw 3cqw;
   margin: 0.6cqw 0 0;
   padding: 0 0 0 3.2cqw;
   text-align: left;

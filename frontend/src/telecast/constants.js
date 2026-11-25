@@ -59,7 +59,7 @@ const DEF = {
 const LOCS = { cebu: "Cebu City", ncr: "NCR Makati", cdo: "CDO Mindanao" };
 // medal for an employee award (optional: "" = no medal)
 // names per page when an award's awardees are listed on the Live Screen (the list option shows above this many)
-const PER = 8;
+const PER = 20;
 const MEDAL = { gold: ["🥇", "Gold"], silver: ["🥈", "Silver"], bronze: ["🥉", "Bronze"] };
 const MB = (b) => (b / 1048576).toFixed(1) + " MB";
 const fm = (t) => Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
