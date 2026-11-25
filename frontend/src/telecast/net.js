@@ -217,6 +217,12 @@ function applyRemote(R, full) {
   // segments are counted by position: remember which ones we were on, in case some were inserted / deleted
   const segId = (S.segs[S.seg] || {}).id,
     edId = (S.segs[S.edit] || {}).id;
+  // an Editor's own location's raffle names / prize: a server copy that doesn't have them (yet) never wipes them
+  if (ownSeg && myLoc())
+    for (const k of ["pools", "prizes"]) {
+      const mine = S[k] && S[k][myLoc()];
+      if (typeof mine === "string" && mine && !(R[k] && typeof R[k][myLoc()] === "string")) R = { ...R, [k]: { ...(R[k] || {}), [myLoc()]: mine } };
+    }
   if (full) setS({ ...DEF, ...R, ...keep });
   else setS({ ...S, segs: R.segs, lib: R.lib, ...pickShared(R) }); // the Director also takes an Editor's ticker / awards / raffle changes
   fixSegs();
