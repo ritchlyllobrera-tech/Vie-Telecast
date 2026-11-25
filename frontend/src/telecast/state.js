@@ -1,6 +1,6 @@
 /** The single show state object `S` (persisted to localStorage) and helpers that normalise it. */
 import BUNDLED from "../data/mediaManifest.json";
-import { K, DEF, norm, ytId } from "./constants.js";
+import { K, DEF, norm, ytId, LOCS } from "./constants.js";
 import { now } from "./clock.js";
 
 let S;
@@ -48,7 +48,7 @@ function migrateToLibrary() {
 function dedupe(t) {
   const seen = new Set(),
     o = [],
-    W = new Set((S.winners || []).map((w) => norm(w.name)));
+    W = new Set(locWinners().map((w) => norm(w.name)));
   for (const l of t.split(/\r?\n/)) {
     const x = l.trim().replace(/\s+/g, " ");
     if (x && !seen.has(norm(x)) && !W.has(norm(x))) {
@@ -73,4 +73,14 @@ const segYt = (g) => ytId(g && g.yt) || (g && g.call && g.call.platform === "you
 const ytOn = () => !!(S.yt && S.yt.id && S.segs[S.seg] && S.yt.seg === S.segs[S.seg].id);
 /** the award shown on the Live Screen for award folder `k` (its own title, else the folder name) */
 const awTitle = (k) => (S.awTitle && typeof S.awTitle[k] === "string" && S.awTitle[k].trim()) || k;
-export { S, fixSegs, dedupe, segYt, ytOn, awTitle };
+/* ---------- grand raffle per location ----------
+ * Every location has its own names list, prize and winners. S.rafLoc is the location this computer's raffle
+ * runs for: the Director picks it (and their Live screens follow); an Editor's is their own location. */
+const rafLoc = () => (S.rafLoc && LOCS[S.rafLoc] ? S.rafLoc : "cebu");
+const poolText = () => (S.pools && typeof S.pools[rafLoc()] === "string" ? S.pools[rafLoc()] : "");
+const setPool = (t) => (S.pools = { ...(S.pools || {}), [rafLoc()]: t });
+const prizeText = () => (S.prizes && typeof S.prizes[rafLoc()] === "string" ? S.prizes[rafLoc()] : "");
+const setPrize = (t) => (S.prizes = { ...(S.prizes || {}), [rafLoc()]: t });
+/** winners of this computer's raffle location (older winners without a location count as Cebu) */
+const locWinners = () => (S.winners || []).filter((w) => (w.loc || "cebu") === rafLoc());
+export { S, fixSegs, dedupe, segYt, ytOn, awTitle, rafLoc, poolText, setPool, prizeText, setPrize, locWinners };

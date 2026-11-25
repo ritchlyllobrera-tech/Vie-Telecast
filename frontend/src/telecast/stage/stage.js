@@ -1,6 +1,6 @@
 /** The 16:9 broadcast stage (used by both the monitor and the live screen): background, snow, panels, ticker, awards. */
 import { LOGO, BG0, MEDAL, PER, $, esc, fmt, meetLink } from "../constants.js";
-import { S, awTitle, dedupe, segLeft, ytOn } from "../state.js";
+import { S, awTitle, dedupe, segLeft, ytOn, poolText, prizeText } from "../state.js";
 import { act, LIVE, MINE } from "../sync.js";
 import { url } from "../media.js";
 import { doCmd } from "../playback.js";
@@ -614,12 +614,12 @@ function updateStage(el, own) {
     win = $(el, ".win");
   $(el, ".wr").classList.toggle("all", !!(isW && S.raffle && el._rev === S.raffle.spinId));
   if (isW && !S.raffle) {
-    const pn = dedupe(S.pool).length;
+    const pn = dedupe(poolText()).length;
     drawWheel(el);
     wc.style.transform = "rotate(0rad)";
     win.textContent = pn
-      ? S.prize
-        ? "\ud83c\udf81 PRIZE: " + S.prize
+      ? prizeText()
+        ? "\ud83c\udf81 PRIZE: " + prizeText()
         : ""
       : "Add participants in the Grand Raffle panel";
     el._sid = null;

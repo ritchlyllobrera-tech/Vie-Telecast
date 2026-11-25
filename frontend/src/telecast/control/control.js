@@ -1,10 +1,10 @@
 /** Control-room page: header, cards, bindings and per-render refresh. */
 import { exportBackup, importBackup } from "../persistence.js";
-import { $, esc, SCENES, MB, meetLink, meetPlat } from "../constants.js";
-import { S, dedupe, segLeft, segYt, ytOn } from "../state.js";
+import { $, esc, SCENES, MB, LOCS, meetLink, meetPlat } from "../constants.js";
+import { S, dedupe, segLeft, segYt, ytOn, rafLoc, poolText, setPool, prizeText, setPrize, locWinners } from "../state.js";
 import { LIVE, ownOut, quiet, save, popOut, doAct } from "../sync.js";
 import { storeFile, mediaButton } from "../media.js";
-import { NET, canControl, renderNet } from "../net.js";
+import { NET, canControl, renderNet, myLoc } from "../net.js";
 import { startCall, stopCall, sharing, viewers, callLive, canShare } from "../call.js";
 import { vidPlaying, startRaf } from "../playback.js";
 import { buildStage, updateStage } from "../stage/stage.js";
@@ -130,7 +130,7 @@ function buildControl(r) {
  <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty 10 years)" maxlength="120" style="flex-basis:100%"></div><div class="row"><input class="g" id="aft" placeholder="🏆 Award shown on screen (e.g. 10 Years of Service)" maxlength="120" style="flex-basis:100%"></div><div class="row"><select class="g" id="afl" aria-label="Location of the folder"></select><button id="afadd">＋ Create folder</button></div><div class="mut">The folder name is for this list only; the Live Screen shows the award. A folder set to one location is only shown to that location's Editor. Drag ⠿ to change the order.</div>
  <h2 style="margin-top:10px">👤 Awardee</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><select class="g" id="aa" title="Folder the employee goes into"></select><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
  <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div id="al"></div></section>
- <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section>
+ <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section>
  <section class="dpanel" data-p="ed"><div id="ed"></div></section>
  <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="mvid"> 🎬 Monitor plays video</label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> Auto-Pilot (starts segments at their set times)</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
  </div></aside><div id="dback"></div>
@@ -283,11 +283,11 @@ function buildControl(r) {
     }
   });
   B("#psave", () => {
-    S.pool = dedupe($(r, "#pool").value).join("\n");
+    setPool(dedupe($(r, "#pool").value).join("\n"));
     save();
   });
   B("#spin", () => {
-    S.pool = $(r, "#pool").value;
+    setPool($(r, "#pool").value);
     spin();
   });
   B("#ack", () => {
@@ -321,7 +321,7 @@ function buildControl(r) {
     save();
   });
   $(r, "#qprize").oninput = (e) => {
-    S.prize = e.target.value;
+    setPrize(e.target.value);
     quiet();
   };
   $(r, "#rmu").onchange = async (e) => {
@@ -344,18 +344,18 @@ function buildControl(r) {
     save();
   };
   $(r, "#prize").oninput = (e) => {
-    S.prize = e.target.value;
+    setPrize(e.target.value);
     quiet();
   };
   $(r, "#pool").oninput = (e) => {
-    S.pool = e.target.value;
+    setPool(e.target.value);
     quiet();
-    $(r, "#pc").textContent = dedupe(S.pool).length + " in pool";
+    $(r, "#pc").textContent = dedupe(poolText()).length + " in pool";
     updateStage($(r, "#prev"), ownOut());
   };
   B("#wclr", (e) => {
     if (clr) {
-      S.winners = [];
+      S.winners = S.winners.filter((w) => (w.loc || "cebu") !== rafLoc()); // this location's winners only
       S.raffle = null;
       clr = 0;
       save();
@@ -478,7 +478,7 @@ function renderControl(r) {
     };
     bd("#bg-lib", S.lib.filter((m) => m.kind !== "sfx").length);
     bd("#bg-aw", S.awards.length);
-    bd("#bg-raf", dedupe(S.pool).length);
+    bd("#bg-raf", dedupe(poolText()).length);
   }
   refreshBulk();
   {
@@ -506,7 +506,7 @@ function renderControl(r) {
   $(r, "#msnd").checked = !!S.monSound;
   {
     const q = $(r, "#qprize");
-    if (q && document.activeElement !== q) q.value = S.prize || "";
+    if (q && document.activeElement !== q) q.value = prizeText();
   }
   $(r, "#mvid").checked = S.monVid !== false;
   {
@@ -540,16 +540,49 @@ function renderControl(r) {
   }
   if (document.activeElement !== $(r, "#tk")) $(r, "#tk").value = S.ticker;
   renderAwards(r);
-  if (document.activeElement !== $(r, "#pool")) $(r, "#pool").value = S.pool;
-  if (document.activeElement !== $(r, "#prize")) $(r, "#prize").value = S.prize || "";
-  $(r, "#pc").textContent = dedupe(S.pool).length + " in pool";
+  rafLocUi(r);
+  if (document.activeElement !== $(r, "#pool")) $(r, "#pool").value = poolText();
+  if (document.activeElement !== $(r, "#prize")) $(r, "#prize").value = prizeText();
+  $(r, "#pc").textContent = dedupe(poolText()).length + " in pool";
   $(r, "#wl").innerHTML =
-    S.winners
+    locWinners()
       .map(
         (w, i) =>
           `<div>${i + 1}. 🏆 ${esc(w.name)}${w.prize ? ` <span class="mut">· ${esc(w.prize)}</span>` : ""}</div>`,
       )
-      .join("") || '<div class="mut">No winners yet.</div>';
+      .join("") || `<div class="mut">No winners yet at ${esc(LOCS[rafLoc()])}.</div>`;
+}
+
+/** Grand raffle location: the Director picks which location's names list to paste and spin;
+ * an Editor always works on their own location's list. Older single lists move to this location once. */
+function rafLocUi(r) {
+  const ed = !canControl() && !!myLoc();
+  if (ed && S.rafLoc !== myLoc()) S.rafLoc = myLoc(); // kept on this computer only (part of an Editor's own flow)
+  if (!ed && !S.rafLoc && LOCS[myLoc()]) S.rafLoc = myLoc();
+  if (canControl() && (S.pool || S.prize) && !Object.keys(S.pools || {}).length) {
+    setPool(S.pool || "");
+    setPrize(S.prize || "");
+    S.pool = "";
+    S.prize = "";
+    save();
+  }
+  const sel = $(r, "#rloc"),
+    H = Object.entries(LOCS)
+      .map(([k, nm]) => `<option value="${k}" ${k === rafLoc() ? "selected" : ""}>📍 ${esc(nm)} (${dedupe(k === rafLoc() ? poolText() : (S.pools || {})[k] || "").length} names)</option>`)
+      .join("");
+  if (sel._h !== H + ed) {
+    sel._h = H + ed;
+    sel.innerHTML = H;
+    sel.disabled = ed;
+    $(r, "#rloch").textContent = ed
+      ? "You paste and spin the names for your own location."
+      : "Pick a location, then paste its names. Each location keeps its own names, prize and winners.";
+  }
+  sel.onchange = () => {
+    S.rafLoc = sel.value;
+    S.raffle = null;
+    save();
+  };
 }
 
 export { setTx, updNext, dupTab, buildControl, renderControl };

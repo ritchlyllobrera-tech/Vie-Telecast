@@ -1,5 +1,5 @@
 /** Show actions: go to a segment, send a playback command, spin the raffle. */
-import { S, dedupe, segYt } from "./state.js";
+import { S, dedupe, segYt, rafLoc, poolText, setPool, prizeText, locWinners } from "./state.js";
 import { save } from "./sync.js";
 import { startRaf, rafOn } from "./playback.js";
 import { now } from "./clock.js";
@@ -93,20 +93,20 @@ const cmd = (kind, action, ids, start) => {
 };
 function spin() {
   if (S.raffle && now() - S.raffle.spinId < (S.raffle.dur || 10) * 1000 + 1000) return;
-  const n = dedupe(S.pool);
+  const n = dedupe(poolText());
   if (!n.length) {
     alert("Paste at least one participant first.");
     return;
   }
   const w = n[Math.floor(Math.random() * n.length)];
-  const pz = (S.prize || "").trim(),
+  const pz = prizeText().trim(),
     dur = +S.spinSec || [10, 15, 20, 25, 30][Math.floor(Math.random() * 5)];
-  S.winners.push({ name: w, prize: pz });
-  S.raffle = { names: n, winner: w, spinId: now(), prize: pz, round: S.winners.length, dur };
+  S.winners.push({ name: w, prize: pz, loc: rafLoc() });
+  S.raffle = { names: n, winner: w, spinId: now(), prize: pz, round: locWinners().length, dur, loc: rafLoc() };
   S.scene = "spin-wheel";
   S.yt = null;
   if (!rafOn()) startRaf();
-  S.pool = n.filter((x) => x !== w).join("\n");
+  setPool(n.filter((x) => x !== w).join("\n"));
   save();
 }
 

@@ -49,6 +49,9 @@ const DEF = {
   awTitle: {}, // folder name -> the award shown on the Live Screen (the folder name when not set)
   awLoc: {}, // folder name -> location key (cebu / ncr / cdo); not set = all locations
   pool: "",
+  pools: {}, // raffle names per location: { cebu: "…", ncr: "…", cdo: "…" }
+  prizes: {}, // prize for the next spin, per location
+  rafLoc: "", // the location this computer's raffle runs for (an Editor: their own)
   winners: [],
   spot: -1,
   spotList: null, // { award, page, ts }: the Live Screen lists an award's awardees, PER names per page

@@ -1,10 +1,10 @@
 /** Grand-raffle spin wheel, winner reveal card and confetti. */
 import { $, esc, WP } from "../constants.js";
-import { S, dedupe } from "../state.js";
+import { S, dedupe, poolText } from "../state.js";
 import { now } from "../clock.js";
 
 function drawWheel(el) {
-  const names = S.raffle ? S.raffle.names : dedupe(S.pool),
+  const names = S.raffle ? S.raffle.names : dedupe(poolText()),
     key = names.join("|"),
     cv = $(el, ".wheelbox canvas");
   if (el._wk === key) return;

@@ -353,7 +353,13 @@ function cleanShared(x) {
     o.winners = x.winners
       .filter(isObj)
       .slice(0, 3000)
-      .map((w) => ({ name: str(w.name, 200), prize: str(w.prize, 500) }));
+      .map((w) => ({ name: str(w.name, 200), prize: str(w.prize, 500), ...(typeof w.loc === "string" && /^[a-z]{1,20}$/.test(w.loc) ? { loc: w.loc } : {}) }));
+  // raffle names and prize per location
+  for (const [key, max] of [["pools", 500000], ["prizes", 2000]])
+    if (isObj(x[key])) {
+      o[key] = {};
+      for (const [k, v] of Object.entries(x[key]).slice(0, 50)) if (/^[a-z]{1,20}$/.test(k) && typeof v === "string") o[key][k] = v.slice(0, max);
+    }
   return o;
 }
 function cleanSeg(x) {
@@ -474,7 +480,17 @@ wss.on("connection", (ws, req) => {
         break;
       case "shared": // an Editor changed the ticker, awards or raffle list (their own flow stays on their computer)
         if (me.role !== "editor" || !isObj(m.S) || !S) return;
-        S = { ...S, ...cleanShared(m.S) };
+        const c = cleanShared(m.S);
+        // raffle: an Editor only changes their own location's names, prize and winners (two sites can't overwrite each other)
+        if (me.loc) {
+          for (const k of ["pools", "prizes"])
+            if (c[k]) c[k] = { ...(isObj(S[k]) ? S[k] : {}), ...(typeof c[k][me.loc] === "string" ? { [me.loc]: c[k][me.loc] } : {}) };
+          if (c.winners) {
+            const mine = (w) => (w.loc || "cebu") === me.loc;
+            c.winners = [...(Array.isArray(S.winners) ? S.winners : []).filter((w) => !mine(w)), ...c.winners.filter(mine)];
+          }
+        }
+        S = { ...S, ...c };
         S.savedAt = Date.now();
         persist();
         everyone({ t: "state", S }, ws);
