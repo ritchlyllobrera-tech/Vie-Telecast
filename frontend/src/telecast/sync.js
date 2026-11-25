@@ -75,6 +75,9 @@ if (ch)
   ch.onmessage = (e) => {
     const d = e.data || {};
     if (d.t === "hb") liveAt = Date.now();
+    else if (d.t === "pos") {
+      if (!LIVE && canControl() && !popWin) followPop(d); // the Director's monitor follows a Live Screen tab
+    }
     else if (d.t === "act") {
       if (!LIVE && canControl()) doAct(d.a);
     } else if (d.t === "ended") {
@@ -110,17 +113,23 @@ if (LIVE) {
   setInterval(() => {
     const el = document.getElementById("app"),
       c = S.cmd;
-    if (!c || !window.opener) return;
+    if (!c || (!window.opener && !ch)) return;
     let m = null;
     if (c.kind === "vid") {
       const v = el.querySelector("video");
       if (v && v.getAttribute("src")) m = { time: v.currentTime, paused: v.paused, dur: v.duration };
     } else if (c.kind === "aud" && el._a && el._a.src)
       m = { time: el._a.currentTime, paused: el._a.paused, i: el._i || 0 };
-    if (m)
+    if (m) {
       try {
-        window.opener.postMessage({ t: "pos", ts: c.ts, kind: c.kind, ...m }, TO);
+        window.opener && window.opener.postMessage({ t: "pos", ts: c.ts, kind: c.kind, ...m }, TO);
       } catch (e) {}
+      // also to a control room in another tab / a refreshed control room (it follows the video it shows)
+      if (!MINE)
+        try {
+          ch && ch.postMessage({ t: "pos", ts: c.ts, kind: c.kind, ...m });
+        } catch (e) {}
+    }
   }, 500);
   try {
     window.opener && window.opener.postMessage({ t: "ready" }, TO);
@@ -174,7 +183,7 @@ addEventListener("message", (e) => {
     }
     return;
   }
-  if (!popWin && d.t === "hb" && e.source && e.source.name === "VienovoMine" && e.source.opener === window) {
+  if (!popWin && d.t === "hb" && e.source && (e.source.name === "VienovoMine" || e.source.name === "VienovoLive") && e.source.opener === window) {
     // this page was reloaded while the Editor's "MY screen" window stayed open: pick it up again and bring it up to date
     popWin = e.source;
     sendPop({ t: "state", S });

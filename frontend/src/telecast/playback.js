@@ -114,6 +114,8 @@ async function doCmd(el, mute) {
         v.play().catch(() => {});
         fail();
       });
+    // a monitor while a Live Screen plays it: play along, muted (the Live Screen's position keeps it in step)
+    else v.play().catch(() => {});
   } else {
     v.pause();
     if (mute) return;
