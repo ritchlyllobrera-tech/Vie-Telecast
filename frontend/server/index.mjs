@@ -314,11 +314,14 @@ const PLATS = ["teams", "meet", "zoom", "other", "youtube"];
 const idList = (a) => (Array.isArray(a) ? a.filter((x) => typeof x === "string" && ID_RE.test(x)).slice(0, 500) : []);
 /** a segment from a client: known fields are type-checked, other fields are kept only when they are plain values */
 const SEG_KEYS = ["id", "title", "desc", "time", "min", "loc", "yt", "av", "am", "an", "all", "loop", "wheel", "endAct", "aud", "vid", "img", "bg", "call", "editedBy", "editedLoc", "editedAt"];
-/** "📡 All sites" is a Director-only switch: anyone else keeps the segment's current value */
+/** Director-only fields: "📡 All sites", the meeting link (live call) and the YouTube Live link. Anyone else keeps the segment's current value */
+const DIR_ONLY = ["all", "call", "yt"];
 function keepAll(me, seg, old) {
   if (me.role === "director") return;
-  if (old && old.all !== undefined) seg.all = old.all;
-  else delete seg.all;
+  for (const k of DIR_ONLY) {
+    if (old && old[k] !== undefined) seg[k] = old[k];
+    else delete seg[k];
+  }
 }
 function cleanSeg(x) {
   if (!isObj(x) || typeof x.id !== "string" || !ID_RE.test(x.id)) return null;

@@ -101,8 +101,12 @@ function renderEditor(r) {
  <h2 style="margin-top:10px">📡 All sites</h2>
  <div class="row"><label class="mut"><input type="checkbox" data-allf="1" ${g.all ? "checked" : ""} ${canControl() && NET.on ? "" : "disabled"}> Play this segment on <b>every site</b> (Cebu and all Editor screens) when the Director presses ▶. Off: only Cebu.</label></div>
  <h2 style="margin-top:10px">📺 YouTube Live (unlisted)</h2>
- <div class="row"><input class="g" data-yt="1" placeholder="Paste the YouTube Live link (https://www.youtube.com/watch?v=…)" value="${esc(g.yt || (g.call?.platform === "youtube" ? g.call.link : "") || "")}"></div>
- <div class="mut" data-yh>${ytHint(g.yt || (g.call?.platform === "youtube" ? g.call.link : ""))}</div>
+ ${
+   canControl()
+     ? `<div class="row"><input class="g" data-yt="1" placeholder="Paste the YouTube Live link (https://www.youtube.com/watch?v=…)" value="${esc(g.yt || (g.call?.platform === "youtube" ? g.call.link : "") || "")}"></div>
+ <div class="mut" data-yh>${ytHint(g.yt || (g.call?.platform === "youtube" ? g.call.link : ""))}</div>`
+     : `<div class="mut">🔒 Only the Director can set the YouTube Live link. ${segYt(g) ? "✔ This segment has a YouTube Live stream." : "No YouTube Live link in this segment."}</div>`
+ }
  <div class="mut">When this segment goes live (▶), every Live Screen plays the YouTube stream by itself in the video area. Moving to another segment stops it. The videos below stay as a backup.</div>
  <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${esc(m.id)}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button class="p" data-pv="${esc(m.id)}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
  <div class="row">${picker(g, "vid", "Add videos from library", Infinity)}</div>
@@ -116,13 +120,18 @@ function renderEditor(r) {
  <div class="row"><label class="mut">⏰ When its time is up <select data-f="endAct"><option value="ask" ${g.endAct !== "next" ? "selected" : ""}>Ask me with a pop-up</option><option value="next" ${g.endAct === "next" ? "selected" : ""}>Go to the next segment automatically</option></select></label></div>
  <div class="row"><label class="mut"><input type="checkbox" data-f="an" ${g.an ? "checked" : ""}> ⏭ When its video or music finishes, go to the next segment automatically</label></div>
  <h2 style="margin-top:10px">📞 Live call (Teams / Google Meet / Zoom)</h2>
- <div class="row"><select data-cf="platform">${Object.entries(PLAT)
+ ${
+   canControl()
+     ? `<div class="row"><select data-cf="platform">${Object.entries(PLAT)
    .map(([k, v]) => `<option value="${k}" ${(g.call?.platform || "teams") === k ? "selected" : ""}>${v}</option>`)
    .join(
      "",
    )}</select><input class="g" data-cf="link" placeholder="Paste the meeting link (https://…)" value="${esc(g.call?.link || "")}"></div>
  <div class="mut" data-lh>${linkHint(g.call?.link)}</div>
- <div class="mut">For a live speech (e.g. the CEO): when this segment is on air, the Director opens the meeting in a Chrome / Edge tab and presses “📡 Share call to Live Screens”. Every location sees and hears it.</div> <h2 style="margin-top:10px">Delete</h2>
+ <div class="mut">For a live speech (e.g. the CEO): when this segment is on air, the Director opens the meeting in a Chrome / Edge tab and presses “📡 Share call to Live Screens”. Every location sees and hears it.</div>`
+     : `<div class="mut">🔒 Only the Director can set and play the meeting link. ${meetLink(g.call?.link) ? "✔ This segment has a " + esc(PLAT[meetPlat(g.call.link)] || "meeting") + " call; the Director will put it on the Live Screens." : "No meeting link in this segment."}</div>`
+ }
+ <h2 style="margin-top:10px">Delete</h2>
  <div class="row"><button class="d" data-segdel="1" ${S.segs.length <= 1 || (S.edit === S.seg && S.started) ? `disabled title="${S.segs.length <= 1 ? "The rundown needs at least one segment" : "This segment is on air. Move to another segment first."}"` : 'title="Delete this segment from the rundown"'}>🗑 Delete segment</button></div>`;
   if (ed._h !== H) {
     const sc = ed.querySelector(".pickl")?.scrollTop || 0;

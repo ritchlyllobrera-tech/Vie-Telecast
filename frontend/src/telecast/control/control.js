@@ -410,10 +410,11 @@ function renderCallBar(r) {
             : `<button class="warnb" id="callgo" title="This address can't share a tab">⚠ Sharing blocked on this address: how to fix</button>`
         }`;
   } else {
+    // an Editor: only the Director sets and plays the meeting link
     H = callLive()
-      ? `<span class="st on">📡 The CEO call is on air (shared by ${esc(S.call.by || "the Director")}). Watch it with “Pop-out Live Screen”.</span>${open}`
+      ? `<span class="st on">📡 The CEO call is on air (shared by ${esc(S.call.by || "the Director")}). Watch it with “Pop-out Live Screen”.</span>`
       : link
-        ? `<span class="g mut">📞 This segment has a ${esc(plat)} call. The Director will share it to the Live Screens. If it doesn't reach your location, open the meeting here.</span>${open}`
+        ? `<span class="g mut">📞 This segment has a ${esc(plat)} call. Only the Director plays it on the Live Screens.</span>`
         : "";
   }
   // an Editor sees that Cebu's program is on their output
