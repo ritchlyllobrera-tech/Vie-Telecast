@@ -71,4 +71,6 @@ export function setS(v) {
 const segYt = (g) => ytId(g && g.yt) || (g && g.call && g.call.platform === "youtube" ? ytId(g.call.link) : "");
 /** YouTube Live is playing on the screens: started for the segment that is on air now (any other segment stops it). */
 const ytOn = () => !!(S.yt && S.yt.id && S.segs[S.seg] && S.yt.seg === S.segs[S.seg].id);
-export { S, fixSegs, dedupe, segYt, ytOn };
+/** the award shown on the Live Screen for award folder `k` (its own title, else the folder name) */
+const awTitle = (k) => (S.awTitle && typeof S.awTitle[k] === "string" && S.awTitle[k].trim()) || k;
+export { S, fixSegs, dedupe, segYt, ytOn, awTitle };

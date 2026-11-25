@@ -1569,3 +1569,21 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
   flex: 1;
   min-width: 0;
 }
+
+/* award folder: the award shown on the Live Screen, under the folder name */
+.awt .awtt {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--acc);
+}
+.awh .awren {
+  flex-direction: column;
+  align-items: stretch;
+}
+.awh .awren label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

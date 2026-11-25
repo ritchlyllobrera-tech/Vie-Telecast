@@ -1,6 +1,6 @@
 /** Employee awards list (card 6): awardees in one folder per award; click an awardee to put them on the Live Screen. */
 import { $, esc, MEDAL, PER } from "../constants.js";
-import { S } from "../state.js";
+import { S, awTitle } from "../state.js";
 import { save } from "../sync.js";
 import { now } from "../clock.js";
 
@@ -11,11 +11,21 @@ let ren = null;
 /** the folder new awardees go into (the form's Folder picker), on this computer */
 let cur = "";
 
-/** create an (empty) award folder; returns false when the name is empty */
-export function createFolder(name) {
-  name = String(name || "").trim().replace(/\s+/g, " ").slice(0, 120);
+const clean = (t) => String(t || "").trim().replace(/\s+/g, " ").slice(0, 120);
+/** set the award shown on the Live Screen for folder `name` ("" = use the folder name) */
+function setTitle(name, title) {
+  const t = clean(title),
+    o = { ...(S.awTitle || {}) };
+  if (t && t !== name) o[name] = t;
+  else delete o[name];
+  S.awTitle = o;
+}
+/** create an (empty) award folder with the award shown on screen; returns false when the name is empty */
+export function createFolder(name, title) {
+  name = clean(name);
   if (!name) return false;
   if (!folders().some((f) => f.name === name)) S.awFolders = [...(S.awFolders || []), name];
+  if (clean(title)) setTitle(name, title);
   cur = name;
   shut.delete(name);
   save();
@@ -33,16 +43,24 @@ function deleteFolder(name) {
   S.awards = S.awards.filter((a) => (a.award || "Award") !== name);
   S.spot = onScreen ? S.awards.indexOf(onScreen) : -1;
   S.awFolders = (S.awFolders || []).filter((x) => x !== name);
+  setTitle(name, "");
   if (S.spotList && S.spotList.award === name) S.spotList = null;
   save();
 }
 
-/** rename award folder `from` to `to`: every awardee in it moves to the new award name */
-function renameFolder(from, to) {
-  to = to.trim().replace(/\s+/g, " ");
-  if (!to || to === from) return true;
-  const into = S.awards.some((a) => (a.award || "Award") === to);
+/** edit folder `from`: new folder name `to` and the award shown on screen `title` */
+function renameFolder(from, to, title) {
+  to = clean(to);
+  if (!to) return false;
+  if (to === from) {
+    setTitle(from, title);
+    save();
+    return true;
+  }
+  const into = folders().some((f) => f.name === to);
   if (into && !confirm(`There is already a folder "${to}". Move the awardees of "${from}" into it?`)) return false;
+  if (!into) setTitle(to, title);
+  setTitle(from, "");
   for (const a of S.awards) if ((a.award || "Award") === from) a.award = to;
   S.awFolders = (S.awFolders || []).map((x) => (x === from ? to : x)).filter((x, i, a) => a.indexOf(x) === i);
   if (cur === from) cur = to;
@@ -122,8 +140,8 @@ export function renderAwards(r) {
         return (
           `<div class="awf${on ? " on" : ""}"><div class="awh">${
             ren && ren.name === f.name
-              ? `<span class="awt awren">${open ? "📂" : "📁"} <input class="g" data-rnin="${fi}" value="${esc(ren.text)}" aria-label="New name for the ${esc(f.name)} folder" maxlength="120"><button class="p" data-rnok="${fi}" title="Save the new name (Enter)">✔ Save</button><button data-rnno="1" title="Keep the old name (Esc)">Cancel</button></span>`
-              : `<button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}</button><button data-rn="${fi}" title="Rename this folder (the award name of everyone in it)" aria-label="Rename the ${esc(f.name)} folder">✎</button><button class="d" data-fdel="${fi}" title="Delete this folder and its awardees" aria-label="Delete the ${esc(f.name)} folder">🗑</button>`
+              ? `<span class="awt awren"><label class="mut">📁 Folder name<input class="g" data-rnin="${fi}" value="${esc(ren.text)}" maxlength="120"></label><label class="mut">🏆 Award shown on screen<input class="g" data-rtin="${fi}" value="${esc(ren.title)}" placeholder="Same as the folder name" maxlength="120"></label><span class="row"><button class="p" data-rnok="${fi}" title="Save (Enter)">✔ Save</button><button data-rnno="1" title="Keep the old names (Esc)">Cancel</button></span></span>`
+              : `<button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}<span class="awtt" title="The award shown on the Live Screen">🏆 ${esc(awTitle(f.name))}</span></button><button data-rn="${fi}" title="Edit the folder name and the award shown on screen" aria-label="Edit the ${esc(f.name)} folder">✎</button><button class="d" data-fdel="${fi}" title="Delete this folder and its awardees" aria-label="Delete the ${esc(f.name)} folder">🗑</button>`
           }<button data-fnext="${fi}" ${f.idx.length ? "" : "disabled"} title="Show the next awardee of this award, one by one (the first one if none of them is on screen)">▶ Next in folder</button>${listBtns(f, fi)}</div>` +
           (open && !f.idx.length ? '<div class="mut awempty">Empty folder: pick it under Folder above and add employees.</div>' : "") +
           (open
@@ -165,21 +183,22 @@ export function renderAwards(r) {
   B("[data-rn]", (b) => {
     b.onclick = () => {
       const k = F[+b.dataset.rn].name;
-      ren = { name: k, text: k };
+      ren = { name: k, text: k, title: awTitle(k) === k ? "" : awTitle(k) };
       renderAwards(r);
     };
   });
   const rnSave = () => {
-    const inp = al.querySelector("[data-rnin]");
+    const inp = al.querySelector("[data-rnin]"),
+      ti = al.querySelector("[data-rtin]");
     if (!ren || !inp) return;
     const from = ren.name;
-    if (renameFolder(from, inp.value)) {
+    if (renameFolder(from, inp.value, ti ? ti.value : "")) {
       ren = null;
       renderAwards(r);
     }
   };
-  B("[data-rnin]", (inp) => {
-    inp.oninput = () => ren && (ren.text = inp.value);
+  B("[data-rnin], [data-rtin]", (inp) => {
+    inp.oninput = () => ren && (inp.dataset.rtin ? (ren.title = inp.value) : (ren.text = inp.value));
     inp.onkeydown = (e) => {
       if (e.key === "Enter") {
         e.preventDefault();

@@ -339,6 +339,11 @@ function cleanShared(x) {
       .filter((f) => typeof f === "string" && f)
       .slice(0, 500)
       .map((f) => f.slice(0, 120));
+  if (isObj(x.awTitle)) {
+    o.awTitle = {};
+    for (const [k, v] of Object.entries(x.awTitle).slice(0, 500))
+      if (k !== "__proto__" && typeof v === "string") o.awTitle[k.slice(0, 120)] = v.slice(0, 120);
+  }
   if (Array.isArray(x.winners))
     o.winners = x.winners
       .filter(isObj)

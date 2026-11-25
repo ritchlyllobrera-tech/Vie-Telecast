@@ -1,6 +1,6 @@
 /** The 16:9 broadcast stage (used by both the monitor and the live screen): background, snow, panels, ticker, awards. */
 import { LOGO, BG0, MEDAL, PER, $, esc, fmt, meetLink } from "../constants.js";
-import { S, dedupe, segLeft, ytOn } from "../state.js";
+import { S, awTitle, dedupe, segLeft, ytOn } from "../state.js";
 import { act, LIVE, MINE } from "../sync.js";
 import { url } from "../media.js";
 import { doCmd } from "../playback.js";
@@ -522,7 +522,7 @@ function updateStage(el, own) {
   if (a) {
     aw.style.display = "flex";
     const md = MEDAL[a.medal] ? a.medal : "",
-      key = S.spot + "|" + a.name + "|" + a.award + "|" + md + "|" + S.awards.length;
+      key = S.spot + "|" + a.name + "|" + awTitle(a.award || "Award") + "|" + md + "|" + S.awards.length;
     if (el._ak !== key) {
       el._ak = key;
       const fs = Math.max(3.2, Math.min(6, 80 / Math.max(a.name.length, 1)));
@@ -535,7 +535,7 @@ function updateStage(el, own) {
         '<i class="fg"></i><button class="xb" data-a="closeAward">\u2715 Close</button>' +
         (md ? '<div class="medal"><span>' + MEDAL[md][0] + "</span>" + MEDAL[md][1] + "</div>" : "") +
         '<div class="at">' +
-        esc(a.award) +
+        esc(awTitle(a.award || "Award")) +
         '</div><div class="an" style="font-size:' +
         fs +
         'cqw">' +
@@ -561,7 +561,7 @@ function updateStage(el, own) {
       pages = Math.ceil(all.length / PER),
       pg = Math.max(0, Math.min(L.page || 0, pages - 1)),
       names = all.slice(pg * PER, pg * PER + PER),
-      key = "L|" + L.award + "|" + pg + "|" + names.map((x) => x.name + ":" + (x.medal || "")).join(",");
+      key = "L|" + awTitle(L.award) + "|" + pg + "|" + names.map((x) => x.name + ":" + (x.medal || "")).join(",");
     aw.style.display = "flex";
     if (el._ak !== key) {
       el._ak = key;
@@ -573,7 +573,7 @@ function updateStage(el, own) {
         FE +
         '<i class="fg"></i><button class="xb" data-a="closeAward">✕ Close</button>' +
         '<div class="at">' +
-        esc(L.award) +
+        esc(awTitle(L.award)) +
         '</div><ol class="anl" start="' +
         (pg * PER + 1) +
         '" style="font-size:' +
