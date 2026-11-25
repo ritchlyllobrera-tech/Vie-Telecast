@@ -1556,3 +1556,16 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
 .sfxw.pkrow .sfxb {
   flex: 1;
 }
+
+/* renaming an award folder in place */
+.awh .awren {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.awh .awren input {
+  flex: 1;
+  min-width: 0;
+}
