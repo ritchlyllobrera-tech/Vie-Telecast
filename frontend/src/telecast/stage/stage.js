@@ -478,7 +478,8 @@ function updateStage(el, own) {
     }
   }
   ytFrame(el, showY ? S.yt.id : "", !!LIVE || (own && !canControl()));
-  const showV = !showC && !showY && vs && pv && (own || S.monVid !== false);
+  // the monitor always shows the video the Live Screen plays (muted unless "Sound on this screen too")
+  const showV = !showC && !showY && vs && pv;
   v.muted = el._gate ? true : !own && !S.monSound;
   el._vid = showV || showC || showY;
   $(el, ".snow").style.visibility = el._vid ? "hidden" : "visible";

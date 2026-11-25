@@ -107,10 +107,6 @@ async function doCmd(el, mute) {
         window._vt = 0;
       }
     };
-    if (mute && S.monVid === false) {
-      v.removeAttribute("src");
-      return;
-    }
     v.src = await url(c.ids[0]);
     if (!mute)
       v.play().catch(() => {
