@@ -435,7 +435,7 @@ textarea {
   border-color: #f59e0b;
   color: #f59e0b;
 }
-/* Editors run their own flow (preview), but cannot delete shared media or run the show-wide cards */
+/* Editors have the Director's tools (Ticker, Awards, Raffle…) except deleting shared media and backups */
 .role-editor .dir,
 .role-editor [data-ldel] {
   display: none !important;

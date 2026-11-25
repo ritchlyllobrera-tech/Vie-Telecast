@@ -323,6 +323,24 @@ function keepAll(me, seg, old) {
     else delete seg[k];
   }
 }
+/** show-wide content from an Editor (ticker, awards, raffle list): only these keys, type-checked */
+const MEDALS = ["", "gold", "silver", "bronze"];
+function cleanShared(x) {
+  const o = {};
+  for (const k of ["ticker", "prize", "defBg", "rafMusic", "rafName"]) if (typeof x[k] === "string") o[k] = str(x[k], 2000);
+  if (typeof x.pool === "string") o.pool = str(x.pool, 500000);
+  if (Array.isArray(x.awards))
+    o.awards = x.awards
+      .filter(isObj)
+      .slice(0, 3000)
+      .map((a) => ({ name: str(a.name, 200), award: str(a.award, 200), medal: MEDALS.includes(a.medal) ? a.medal : "" }));
+  if (Array.isArray(x.winners))
+    o.winners = x.winners
+      .filter(isObj)
+      .slice(0, 3000)
+      .map((w) => ({ name: str(w.name, 200), prize: str(w.prize, 500) }));
+  return o;
+}
 function cleanSeg(x) {
   if (!isObj(x) || typeof x.id !== "string" || !ID_RE.test(x.id)) return null;
   const g = {};
@@ -436,6 +454,13 @@ wss.on("connection", (ws, req) => {
           S = null; // not a usable show
           return;
         }
+        persist();
+        everyone({ t: "state", S }, ws);
+        break;
+      case "shared": // an Editor changed the ticker, awards or raffle list (their own flow stays on their computer)
+        if (me.role !== "editor" || !isObj(m.S) || !S) return;
+        S = { ...S, ...cleanShared(m.S) };
+        S.savedAt = Date.now();
         persist();
         everyone({ t: "state", S }, ws);
         break;

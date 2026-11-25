@@ -30,6 +30,9 @@ const LOCAL = ["edit", "monSound", "monVid", "sfx", "sfxVol"];
 // what is playing / on screen. An Editor runs their own flow with these on their own computer;
 // only the Director's copy is the program that the Live screens show.
 const PLAY = ["yt", "ytStop", "cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "scene", "bgId", "spot", "spotTs", "spotList", "raffle", "sfx", "sfxVol"];
+// show-wide content an Editor may change too (the Director sends it with the rest of the show)
+const SHARED = ["ticker", "defBg", "awards", "pool", "winners", "prize", "rafMusic", "rafName"];
+const pickShared = (o) => Object.fromEntries(SHARED.filter((k) => k in o).map((k) => [k, o[k]]));
 const ROLE = { director: "🎬 Director", editor: "✏ Editor", screen: "📺 Live screen" };
 
 // samePc: this browser runs on the computer that runs the server (it can switch to http://localhost)
@@ -196,6 +199,7 @@ function snapshot() {
   base = {
     order: segs.map((g) => g.id).join(),
     show: JSON.stringify(rest),
+    shared: JSON.stringify(pickShared(rest)),
     segs: Object.fromEntries(segs.map((g) => [g.id, JSON.stringify(g)])),
     lib: new Map(lib.map((x) => [x.id, JSON.stringify(x)])),
   };
@@ -214,7 +218,7 @@ function applyRemote(R, full) {
   const segId = (S.segs[S.seg] || {}).id,
     edId = (S.segs[S.edit] || {}).id;
   if (full) setS({ ...DEF, ...R, ...keep });
-  else setS({ ...S, segs: R.segs, lib: R.lib });
+  else setS({ ...S, segs: R.segs, lib: R.lib, ...pickShared(R) }); // the Director also takes an Editor's ticker / awards / raffle changes
   fixSegs();
   const at = (id) => S.segs.findIndex((g) => g.id === id);
   if ((ownSeg || !full) && at(segId) >= 0) S.seg = at(segId);
@@ -255,6 +259,14 @@ export function netPush() {
     if (j !== base.show) {
       netSend({ t: "show", S: rest });
       base.show = j;
+    }
+  } else {
+    // an Editor: only the show-wide content (ticker, awards, raffle list); their own flow stays on this computer
+    const sh = pickShared(rest),
+      j = JSON.stringify(sh);
+    if (j !== base.shared) {
+      netSend({ t: "shared", S: sh });
+      base.shared = j;
     }
   }
   for (const g of segs) {
