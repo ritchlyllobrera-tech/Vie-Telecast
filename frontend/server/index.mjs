@@ -493,11 +493,24 @@ wss.on("connection", (ws, req) => {
         S = { ...S, ...c };
         S.savedAt = Date.now();
         persist();
-        everyone({ t: "state", S }, ws);
+        everyone({ t: "state", S }); // the Editor too: their screen ends on what the server kept, even after a crossing update
         break;
       case "show": // director: everything except segments + library (those come as patches)
         if (me.role !== "director" || !isObj(m.S) || !S) return;
-        S = { ...m.S, segs: S.segs, lib: S.lib };
+        if (m.patch) {
+          // only the keys the Director changed: the ticker / awards / raffle names an Editor sent meanwhile stay
+          const P = m.S,
+            next = { ...S, ...P, segs: S.segs, lib: S.lib };
+          for (const k of ["pools", "prizes"]) if (isObj(P[k])) next[k] = { ...(isObj(S[k]) ? S[k] : {}), ...P[k] };
+          if (Array.isArray(P.winners)) {
+            const locs = Array.isArray(P.winnersLocs) ? P.winnersLocs : null;
+            next.winners = locs
+              ? [...(Array.isArray(S.winners) ? S.winners : []).filter((w) => !locs.includes((w && w.loc) || "cebu")), ...P.winners]
+              : P.winners;
+          }
+          delete next.winnersLocs;
+          S = next;
+        } else S = { ...m.S, segs: S.segs, lib: S.lib }; // an older control room page: the whole show
         delete S.sfx; // sound effects stay at the location that played them (also from a page not yet refreshed)
         delete S.sfxVol;
         persist();

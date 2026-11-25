@@ -232,6 +232,33 @@ function applyRemote(R, full) {
   render();
 }
 
+/** keys raffle data is kept per location in: only the locations that changed are sent */
+const PER_LOC = ["pools", "prizes"];
+/** the Director's show update: changed keys only; raffle names / prizes / winners only for the locations that changed */
+function showPatch(now, prev) {
+  const P = {},
+    J = JSON.stringify;
+  for (const k of Object.keys(now)) if (J(now[k]) !== J(prev[k])) P[k] = now[k];
+  for (const k of PER_LOC)
+    if (P[k] && typeof P[k] === "object") {
+      const was = prev[k] && typeof prev[k] === "object" ? prev[k] : {};
+      P[k] = Object.fromEntries(Object.entries(P[k]).filter(([l, v]) => J(v) !== J(was[l])));
+    }
+  if (Array.isArray(P.winners)) {
+    const by = (list) => {
+        const m = {};
+        for (const w of list || []) (m[w.loc || "cebu"] ||= []).push(w);
+        return m;
+      },
+      a = by(P.winners),
+      b = by(prev.winners),
+      locs = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((l) => J(a[l] || []) !== J(b[l] || []));
+    P.winners = P.winners.filter((w) => locs.includes(w.loc || "cebu"));
+    P.winnersLocs = locs;
+  }
+  return P;
+}
+
 /** Called by flush(): send what changed since the last snapshot. */
 export function netPush() {
   if (!NET.on || LIVE) return;
@@ -257,7 +284,9 @@ export function netPush() {
   if (role === "director") {
     const j = JSON.stringify(rest);
     if (j !== base.show) {
-      netSend({ t: "show", S: rest });
+      // only what changed since the last send, so an Editor's ticker / awards / raffle names that reached the
+      // server meanwhile are never overwritten by this computer's older copy
+      netSend({ t: "show", S: showPatch(rest, base.show ? JSON.parse(base.show) : {}), patch: 1 });
       base.show = j;
     }
   } else {
