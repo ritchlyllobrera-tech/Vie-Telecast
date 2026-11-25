@@ -351,6 +351,8 @@ function buildControl(r) {
     setPool(e.target.value);
     quiet();
     $(r, "#pc").textContent = dedupe(poolText()).length + " in pool";
+    badges(r); // the Raffle count updates as soon as names are pasted
+    rafLocUi(r); // and the name count in the location picker
     updateStage($(r, "#prev"), ownOut());
   };
   B("#wclr", (e) => {
@@ -471,14 +473,7 @@ function renderControl(r) {
     $(r, "#qwheel").hidden = !wheel;
     $(r, "#qaw").hidden = !aw;
     q.hidden = !(wheel || aw);
-    const bd = (id, n) => {
-      const e = $(r, id);
-      setTx(e, n ? String(n) : "");
-      e.hidden = !n;
-    };
-    bd("#bg-lib", S.lib.filter((m) => m.kind !== "sfx").length);
-    bd("#bg-aw", S.awards.length);
-    bd("#bg-raf", dedupe(poolText()).length);
+    badges(r);
   }
   refreshBulk();
   {
@@ -551,6 +546,19 @@ function renderControl(r) {
           `<div>${i + 1}. 🏆 ${esc(w.name)}${w.prize ? ` <span class="mut">· ${esc(w.prize)}</span>` : ""}</div>`,
       )
       .join("") || `<div class="mut">No winners yet at ${esc(LOCS[rafLoc()])}.</div>`;
+}
+
+/** the counts on the tool rail (Media, Awards, Raffle); also called while typing / pasting, which saves without a full redraw */
+function badges(r) {
+  const bd = (id, n) => {
+    const e = $(r, id);
+    if (!e) return;
+    setTx(e, n ? String(n) : "");
+    e.hidden = !n;
+  };
+  bd("#bg-lib", S.lib.filter((m) => m.kind !== "sfx").length);
+  bd("#bg-aw", S.awards.length);
+  bd("#bg-raf", dedupe(poolText()).length);
 }
 
 /** Grand raffle location: the Director picks which location's names list to paste and spin;
