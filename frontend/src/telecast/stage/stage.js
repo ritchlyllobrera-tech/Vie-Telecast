@@ -234,7 +234,7 @@ function tick(el) {
       String(s % 60).padStart(2, "0")
     );
   };
-  const nxt = S.running && S.auto && S.segs[S.seg + 1] && left < 0,
+  const nxt = S.running && g.endAct === "next" && S.segs[S.seg + 1] && left < 0,
     lt = nxt ? "NEXT IN " + Math.max(0, Math.ceil((5000 + left) / 1000)) + "s" : (left < 0 ? "OVER " : "") + f2(left),
     ut = S.started ? fmt(now() - S.t0) : "00:00:00",
     col = left < 0 ? "#f87171" : "";

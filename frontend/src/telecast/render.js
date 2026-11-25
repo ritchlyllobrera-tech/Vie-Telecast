@@ -33,8 +33,8 @@ setInterval(() => {
   }
   // nothing starts or advances by itself until Start / Resume is pressed (an Editor's flow runs on their computer only)
   if (LIVE || !S.running) return;
-  // Auto-Pilot: a segment with a set clock time starts at that time
-  if (S.auto) {
+  // ⏰ Follow the schedule (off unless turned on in Settings): a segment with a set clock time starts at that time
+  if (S.autoTime) {
     const key = d.toDateString() + hm,
       i = S.segs.findIndex((g) => g.time === hm);
     if (i >= 0 && lastKey !== key) {

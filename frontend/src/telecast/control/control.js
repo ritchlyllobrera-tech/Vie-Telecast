@@ -132,7 +132,7 @@ function buildControl(r) {
  <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div id="al"></div></section>
  <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section>
  <section class="dpanel" data-p="ed"><div id="ed"></div></section>
- <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> Auto-Pilot (starts segments at their set times)</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
+ <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> ⏰ Follow the schedule (each segment starts by itself at its set time). Leave off while testing.</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
  </div></aside><div id="dback"></div>
  <div id="segend" class="cue" hidden role="status"><div class="cuetop"><span class="cueic">⏳</span><b class="cuec tm" data-c></b><div class="cuetx"><b data-g></b><span data-n></span></div></div><div class="cuebar"><i></i></div><div class="row"><button id="cue1">+1 min</button><button class="p" id="cuenx">Next segment now ▶</button></div></div>
  <div id="tup" hidden role="alertdialog" aria-labelledby="tuph"><h3 id="tuph">⏰ Time is up</h3><div class="mut" data-tt></div><div class="row"><button class="p" id="tupgo"></button></div><div class="row"><button id="tup1">+1 min</button><button id="tup5">+5 min</button><button id="tupstay">Stay on this segment</button></div></div>`;
@@ -160,7 +160,7 @@ function buildControl(r) {
   document.addEventListener("vtc-panel", () => syncDrawer(r));
   B("#qanx", nextAward);
   $(r, "#auto").onchange = (e) => {
-    S.auto = e.target.checked;
+    S.autoTime = e.target.checked;
     save();
   };
   $(r, "#msnd").onchange = (e) => {
@@ -493,7 +493,7 @@ function renderControl(r) {
     );
     st.title = st.textContent;
   }
-  $(r, "#auto").checked = S.auto;
+  $(r, "#auto").checked = !!S.autoTime;
   $(r, "#msnd").checked = !!S.monSound;
   {
     const q = $(r, "#qprize");

@@ -30,7 +30,8 @@ const DEF = {
   seg: 0,
   edit: 0,
   scene: "standby",
-  auto: true,
+  auto: true, // a segment picks its own screen (video, wheel, live feed) when it starts
+  autoTime: false, // ⏰ follow the schedule: segments with a set clock time start at that time (off while testing)
   running: false,
   started: 0,
   ticker:
