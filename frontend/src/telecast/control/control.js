@@ -115,8 +115,7 @@ function dupTab() {
     "\u26a0 The control room is already open in another tab or window of this browser. Changes made in both can overwrite each other \u2014 please close one.";
   document.body.prepend(d);
 }
-let clr = 0,
-  rst = 0;
+let rst = 0;
 /* control UI */
 function buildControl(r) {
   r.innerHTML = `<div class="aur"></div><header id="top"><button id="sidet" title="Show the rundown" aria-label="Show the rundown">☰ Rundown</button><div class="brand"><span class="bmark">🎄</span><div><h1>VIENOVO TELECAST</h1><small>Control room · Year End &amp; Christmas 2026</small></div></div><span id="net" class="row"></span><div class="showctl"><button class="p" id="go"></button><button id="rst" title="Start again from segment 1">⏮ Restart</button><span id="shst"></span></div><span class="sp"></span><b id="clk" class="tm"></b><span class="live-dot"></span><span class="mut" id="sv">✔ Auto-saved</span><button class="p" id="pop">Pop-out Live Screen ↗</button><button id="fs" title="Fullscreen preview of the monitor">⛶<span class="lbl"> Fullscreen</span></button></header>
@@ -130,7 +129,7 @@ function buildControl(r) {
  <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty 10 years)" maxlength="120" style="flex-basis:100%"></div><div class="row"><input class="g" id="aft" placeholder="🏆 Award shown on screen (e.g. 10 Years of Service)" maxlength="120" style="flex-basis:100%"></div><div class="row"><select class="g" id="afl" aria-label="Location of the folder"></select><button id="afadd">＋ Create folder</button></div><div class="mut">The folder name is for this list only; the Live Screen shows the award. A folder set to one location is only shown to that location's Editor. Drag ⠿ to change the order.</div>
  <h2 style="margin-top:10px">👤 Awardee</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><select class="g" id="aa" title="Folder the employee goes into"></select><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
  <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div id="al"></div></section>
- <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section>
+ <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button><div class="row wclrq" id="wclrq" hidden><span class="g mut">Clear the winners. Put their names back in the names list?</span><button class="p" id="wback">↩ Clear &amp; put names back</button><button class="d" id="wonly">🗑 Clear only</button><button id="wno">Cancel</button></div></section>
  <section class="dpanel" data-p="ed"><div id="ed"></div></section>
  <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> ⏰ Follow the schedule (each segment starts by itself at its set time). Leave off while testing.</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
  </div></aside><div id="dback"></div>
@@ -351,21 +350,32 @@ function buildControl(r) {
     rafLocUi(r); // and the name count in the location picker
     updateStage($(r, "#prev"), ownOut());
   };
-  B("#wclr", (e) => {
-    if (clr) {
-      S.winners = S.winners.filter((w) => (w.loc || "cebu") !== rafLoc()); // this location's winners only
-      S.raffle = null;
-      clr = 0;
-      save();
-    } else {
-      clr = 1;
-      e.target.textContent = "Click again to confirm";
-      setTimeout(() => {
-        clr = 0;
-        e.target.textContent = "Clear winners";
-      }, 3000);
+  // Clear winners: asks whether the winners' names go back into this location's names list
+  const wq = $(r, "#wclrq"),
+    wAsk = (on) => {
+      wq.hidden = !on;
+      $(r, "#wclr").hidden = on;
+    };
+  const clearWinners = (back) => {
+    const mine = locWinners(),
+      names = mine.map((w) => w.name);
+    S.winners = S.winners.filter((w) => (w.loc || "cebu") !== rafLoc()); // this location's winners only
+    S.raffle = null;
+    if (back && names.length) {
+      const cur = poolText().replace(/\s+$/, "");
+      setPool((cur ? cur + "\n" : "") + names.join("\n"));
+      setPool(dedupe(poolText()).join("\n")); // a name already in the list is kept once
     }
+    wAsk(false);
+    save();
+  };
+  B("#wclr", () => {
+    if (!locWinners().length) return;
+    wAsk(true);
   });
+  B("#wback", () => clearWinners(true));
+  B("#wonly", () => clearWinners(false));
+  B("#wno", () => wAsk(false));
 }
 const PLAT = { teams: "Microsoft Teams", meet: "Google Meet", zoom: "Zoom", other: "Meeting" };
 /** Live call bar (monitor card): the Director shares the CEO's Teams / Meet / Zoom call to every Live Screen. */
