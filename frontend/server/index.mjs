@@ -334,6 +334,11 @@ function cleanShared(x) {
       .filter(isObj)
       .slice(0, 3000)
       .map((a) => ({ name: str(a.name, 200), award: str(a.award, 200), medal: MEDALS.includes(a.medal) ? a.medal : "" }));
+  if (Array.isArray(x.awFolders))
+    o.awFolders = x.awFolders
+      .filter((f) => typeof f === "string" && f)
+      .slice(0, 500)
+      .map((f) => f.slice(0, 120));
   if (Array.isArray(x.winners))
     o.winners = x.winners
       .filter(isObj)

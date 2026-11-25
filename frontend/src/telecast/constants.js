@@ -45,6 +45,7 @@ const DEF = {
     bg: null,
   })),
   awards: [],
+  awFolders: [], // award folders in order (an empty folder is kept until employees are added)
   pool: "",
   winners: [],
   spot: -1,

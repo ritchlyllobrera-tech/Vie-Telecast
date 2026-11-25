@@ -8,6 +8,34 @@ import { now } from "../clock.js";
 const shut = new Set();
 /** the folder being renamed on this computer: { name, text } (text = what is typed so far) */
 let ren = null;
+/** the folder new awardees go into (the form's Folder picker), on this computer */
+let cur = "";
+
+/** create an (empty) award folder; returns false when the name is empty */
+export function createFolder(name) {
+  name = String(name || "").trim().replace(/\s+/g, " ").slice(0, 120);
+  if (!name) return false;
+  if (!folders().some((f) => f.name === name)) S.awFolders = [...(S.awFolders || []), name];
+  cur = name;
+  shut.delete(name);
+  save();
+  return true;
+}
+/** the folder picked in the form for new awardees ("" = no folder yet) */
+export const curFolder = () => (folders().some((f) => f.name === cur) ? cur : (folders().at(-1) || {}).name || "");
+export const setCurFolder = (v) => (cur = v);
+
+/** delete folder `name` and every awardee in it */
+function deleteFolder(name) {
+  const n = S.awards.filter((a) => (a.award || "Award") === name).length;
+  if (!confirm(n ? `Delete the folder "${name}" and its ${n} awardee${n > 1 ? "s" : ""}?` : `Delete the empty folder "${name}"?`)) return;
+  const onScreen = S.awards[S.spot];
+  S.awards = S.awards.filter((a) => (a.award || "Award") !== name);
+  S.spot = onScreen ? S.awards.indexOf(onScreen) : -1;
+  S.awFolders = (S.awFolders || []).filter((x) => x !== name);
+  if (S.spotList && S.spotList.award === name) S.spotList = null;
+  save();
+}
 
 /** rename award folder `from` to `to`: every awardee in it moves to the new award name */
 function renameFolder(from, to) {
@@ -16,6 +44,8 @@ function renameFolder(from, to) {
   const into = S.awards.some((a) => (a.award || "Award") === to);
   if (into && !confirm(`There is already a folder "${to}". Move the awardees of "${from}" into it?`)) return false;
   for (const a of S.awards) if ((a.award || "Award") === from) a.award = to;
+  S.awFolders = (S.awFolders || []).map((x) => (x === from ? to : x)).filter((x, i, a) => a.indexOf(x) === i);
+  if (cur === from) cur = to;
   if (S.spotList && S.spotList.award === from) S.spotList = { ...S.spotList, award: to, page: into ? 0 : S.spotList.page };
   if (shut.delete(from)) shut.add(to);
   save();
@@ -29,9 +59,10 @@ export const medalOpts = (v) =>
     .map(([k, [ic, nm]]) => `<option value="${k}" ${v === k ? "selected" : ""}>${ic} ${nm}</option>`)
     .join("");
 
-/** awards grouped by award name, folders in order of first appearance: [{ name, idx: [award indexes] }] */
+/** awards grouped by award name: created folders first (empty ones too), then any other award names: [{ name, idx: [award indexes] }] */
 function folders() {
   const m = new Map();
+  for (const k of S.awFolders || []) m.set(k, []);
   S.awards.forEach((a, i) => {
     const k = a.award || "Award";
     if (!m.has(k)) m.set(k, []);
@@ -92,8 +123,9 @@ export function renderAwards(r) {
           `<div class="awf${on ? " on" : ""}"><div class="awh">${
             ren && ren.name === f.name
               ? `<span class="awt awren">${open ? "📂" : "📁"} <input class="g" data-rnin="${fi}" value="${esc(ren.text)}" aria-label="New name for the ${esc(f.name)} folder" maxlength="120"><button class="p" data-rnok="${fi}" title="Save the new name (Enter)">✔ Save</button><button data-rnno="1" title="Keep the old name (Esc)">Cancel</button></span>`
-              : `<button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}</button><button data-rn="${fi}" title="Rename this folder (the award name of everyone in it)" aria-label="Rename the ${esc(f.name)} folder">✎</button>`
-          }<button data-fnext="${fi}" title="Show the next awardee of this award, one by one (the first one if none of them is on screen)">▶ Next in folder</button>${listBtns(f, fi)}</div>` +
+              : `<button class="awt" data-fold="${fi}" aria-expanded="${open}" title="${open ? "Close" : "Open"} this folder">${open ? "▾" : "▸"} ${open ? "📂" : "📁"} <b>${esc(f.name)}</b> <span class="mut">${f.idx.length}</span>${on && !open ? ' <span class="onair">● ON SCREEN</span>' : ""}</button><button data-rn="${fi}" title="Rename this folder (the award name of everyone in it)" aria-label="Rename the ${esc(f.name)} folder">✎</button><button class="d" data-fdel="${fi}" title="Delete this folder and its awardees" aria-label="Delete the ${esc(f.name)} folder">🗑</button>`
+          }<button data-fnext="${fi}" ${f.idx.length ? "" : "disabled"} title="Show the next awardee of this award, one by one (the first one if none of them is on screen)">▶ Next in folder</button>${listBtns(f, fi)}</div>` +
+          (open && !f.idx.length ? '<div class="mut awempty">Empty folder: pick it under Folder above and add employees.</div>' : "") +
           (open
             ? f.idx
                 .map((i, n) => {
@@ -105,7 +137,7 @@ export function renderAwards(r) {
             : "") +
           "</div>"
         );
-      }).join("") || '<div class="mut">No awards yet. Add them in program order; each award gets its own folder.</div>';
+      }).join("") || '<div class="mut">No folders yet. Name a folder above and press ＋ Create folder, then add employees to it.</div>';
   if (al._h !== H) {
     al._h = H;
     al.innerHTML = H;
@@ -115,13 +147,19 @@ export function renderAwards(r) {
       ri.setSelectionRange(ri.value.length, ri.value.length);
     }
   }
-  // the Award box suggests the existing folders, so a new awardee lands in the right one
-  const dl = $(r, "#awl"),
-    DH = F.map((f) => `<option value="${esc(f.name)}"></option>`).join("");
-  if (dl && dl._h !== DH) {
-    dl._h = DH;
-    dl.innerHTML = DH;
+  // the form's Folder picker: new awardees go into the picked folder
+  const fs = $(r, "#aa"),
+    c = curFolder(),
+    FH = F.length
+      ? F.map((f) => `<option value="${esc(f.name)}" ${f.name === c ? "selected" : ""}>📁 ${esc(f.name)}</option>`).join("")
+      : '<option value="">Create a folder first</option>';
+  if (fs && fs._h !== FH) {
+    fs._h = FH;
+    fs.innerHTML = FH;
   }
+  if (fs) fs.disabled = !F.length;
+  const ab = $(r, "#aadd");
+  if (ab) ab.disabled = !F.length;
   const B = (sel, f) => al.querySelectorAll(sel).forEach(f);
   // rename a folder in place
   B("[data-rn]", (b) => {
@@ -160,6 +198,7 @@ export function renderAwards(r) {
     };
   });
   if (ren && !F.some((f) => f.name === ren.name)) ren = null; // the folder was removed meanwhile
+  B("[data-fdel]", (b) => (b.onclick = () => deleteFolder(F[+b.dataset.fdel].name)));
   B("[data-fold]", (b) => {
     b.onclick = () => {
       const k = F[+b.dataset.fold].name;

@@ -12,7 +12,7 @@ import { setSeg, cmd, playYt, stopYt, endBc, spin, stopSfx, pauseShow, resumeSho
 import { renderRundown } from "./rundown.js";
 import { openBulk, refreshBulk } from "./bulk.js";
 import { now } from "../clock.js";
-import { renderAwards, nextAward, medalOpts } from "./awards.js";
+import { renderAwards, nextAward, medalOpts, createFolder, setCurFolder } from "./awards.js";
 import { renderEditor, setDrawer, drawerOpen, openPanel, curPanel } from "./editor.js";
 import { renderLibrary, renderSfx } from "./library.js";
 
@@ -117,15 +117,6 @@ function dupTab() {
 }
 let clr = 0,
   rst = 0;
-/** "gold" / "Silver" / "1st" / "3" -> medal key; "none" / "-" -> ""; anything else -> null (not a medal column) */
-function medalOf(t) {
-  const x = String(t || "").trim().toLowerCase();
-  if (/^(gold|1|1st|first)$/.test(x)) return "gold";
-  if (/^(silver|2|2nd|second)$/.test(x)) return "silver";
-  if (/^(bronze|3|3rd|third)$/.test(x)) return "bronze";
-  if (/^(none|no medal|-)$/.test(x)) return "";
-  return null;
-}
 /* control UI */
 function buildControl(r) {
   r.innerHTML = `<div class="aur"></div><header id="top"><button id="sidet" title="Show the rundown" aria-label="Show the rundown">☰ Rundown</button><div class="brand"><span class="bmark">🎄</span><div><h1>VIENOVO TELECAST</h1><small>Control room · Year End &amp; Christmas 2026</small></div></div><span id="net" class="row"></span><div class="showctl"><button class="p" id="go"></button><button id="rst" title="Start again from segment 1">⏮ Restart</button><span id="shst"></span></div><span class="sp"></span><b id="clk" class="tm"></b><span class="live-dot"></span><span class="mut" id="sv">✔ Auto-saved</span><button class="p" id="pop">Pop-out Live Screen ↗</button><button id="fs" title="Fullscreen preview of the monitor">⛶<span class="lbl"> Fullscreen</span></button></header>
@@ -136,8 +127,9 @@ function buildControl(r) {
  <section class="dpanel" data-p="lib"><div id="upst" class="mut" style="display:none;padding:6px 8px;border:1px dashed var(--acc);border-radius:10px;margin-bottom:8px"></div><div id="lib"></div></section>
  <section class="dpanel" data-p="sfx"><div id="sfx" class="sfxg"></div><div class="row"><button id="fxstop">⏹ Stop effects</button><label class="mut">🔉 Volume <input type="range" id="fxv" min="0" max="100" step="5"></label><label class="b">⬆ Upload effects<input type="file" hidden multiple accept="audio/*,.mp3,.m4a,.wav,.ogg" data-lup="sfx"></label></div><div class="mut" id="fxhelp">Press an effect to play it once, on top of the music. <b>Only your location hears it</b> (this computer and its pop-out Live Screen); other venues are not affected. Effects are played by hand only: they are not part of any segment.</div></section>
  <section class="dpanel" data-p="tk"><h2>Ticker</h2><div class="row"><input class="g" id="tk"><button class="p" id="tkb">Broadcast</button></div><h2 style="margin-top:16px">Default live background</h2><div class="row"><label class="b">🖼 Upload default<input type="file" hidden accept="image/*" id="dbg"></label><button id="dbr">Reset to Vienovo winter</button></div><div class="mut">Shown whenever a segment has no picture of its own.</div></section>
- <section class="dpanel" data-p="aw"><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><input class="g" id="aa" placeholder="Award (e.g. Sales Awardee)" list="awl"><datalist id="awl"></datalist><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
- <textarea id="acsv" placeholder="Paste CSV: Name, Award, Medal (one per line; medal is optional: gold, silver or bronze)"></textarea><div class="row"><button id="aimp">Import CSV</button><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div id="al"></div></section>
+ <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty Award: 10 Years)" maxlength="120"><button id="afadd">＋ Create folder</button></div>
+ <h2 style="margin-top:10px">👤 Awardee</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><select class="g" id="aa" title="Folder the employee goes into"></select><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
+ <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div id="al"></div></section>
  <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button></section>
  <section class="dpanel" data-p="ed"><div id="ed"></div></section>
  <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="mvid"> 🎬 Monitor plays video</label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> Auto-Pilot (starts segments at their set times)</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
@@ -249,23 +241,25 @@ function buildControl(r) {
   B("#aadd", () => {
     const n = $(r, "#an").value.trim();
     if (!n) return;
-    S.awards.push({ name: n, award: $(r, "#aa").value.trim() || "Award", medal: $(r, "#amed").value });
-    // the award and medal stay filled in, for entering several awardees of the same award one after another
+    const f = $(r, "#aa").value;
+    if (!f) return;
+    S.awards.push({ name: n, award: f, medal: $(r, "#amed").value });
+    // the folder and medal stay picked, for entering several awardees of the same award one after another
     $(r, "#an").value = "";
     $(r, "#an").focus();
     save();
   });
-  B("#aimp", () => {
-    for (const l of $(r, "#acsv").value.split(/\r?\n/)) {
-      const p = l.split(/[,\t]/).map((x) => x.trim()),
-        // optional last column: gold / silver / bronze (or 1st / 2nd / 3rd)
-        m = p.length > 2 ? medalOf(p[p.length - 1]) : null;
-      if (m !== null) p.pop();
-      if (p[0]) S.awards.push({ name: p[0], award: p.slice(1).join(", ") || "Award", medal: m || "" });
-    }
-    $(r, "#acsv").value = "";
-    save();
+  // folders are named on their own, then employees are added into the picked folder
+  B("#afadd", () => {
+    if (createFolder($(r, "#afn").value)) {
+      $(r, "#afn").value = "";
+      $(r, "#an").focus();
+    } else $(r, "#afn").focus();
   });
+  $(r, "#afn").onkeydown = (e) => {
+    if (e.key === "Enter") $(r, "#afadd").click();
+  };
+  $(r, "#aa").onchange = (e) => setCurFolder(e.target.value);
   B("#aoff", () => {
     S.spot = -1;
     S.spotList = null;
@@ -277,8 +271,9 @@ function buildControl(r) {
     if (e.key === "Enter") $(r, "#aadd").click();
   };
   B("#aclr", () => {
-    if (confirm("Delete all awards?")) {
+    if (confirm("Delete all award folders and awardees?")) {
       S.awards = [];
+      S.awFolders = [];
       S.spot = -1;
       S.spotList = null;
       save();
