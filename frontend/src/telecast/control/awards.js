@@ -63,21 +63,21 @@ function showList(name, page) {
   save();
 }
 
-/** buttons for showing all of a folder's names, PER at a time (only for folders with more than PER awardees) */
+/** buttons for showing all of a folder's names, PER at a time (Next only while names are left) */
 function listBtns(f, fi) {
-  if (f.idx.length <= PER) return "";
+  if (f.idx.length < 2) return "";
   const pages = Math.ceil(f.idx.length / PER),
     L = S.spotList && S.spotList.award === f.name ? S.spotList : null;
-  if (!L) return `<button data-lst="${fi}" title="Show all of this award's awardees on the Live Screen, ${PER} names at a time; Next shows the rest">📋 Show all names</button>`;
+  if (!L) return `<button data-lst="${fi}" title="Show all of this award's awardees on the Live Screen (up to ${PER} at a time; Next shows the rest)">📋 Show all names</button>`;
   const pg = Math.min(L.page, pages - 1),
     from = pg * PER + 1,
     to = Math.min(f.idx.length, from + PER - 1);
   return (
     `<span class="onair" title="Names ${from} to ${to} of ${f.idx.length} are on the Live Screen">● ${from}–${to} of ${f.idx.length}</span>` +
-    `<button data-lprev="${fi}" ${pg ? "" : "disabled"} title="Show the previous ${PER} names">◀ Back</button>` +
+    (pages > 1 ? `<button data-lprev="${fi}" ${pg ? "" : "disabled"} title="Show the previous ${PER} names">◀ Back</button>` : "") +
     (pg < pages - 1
       ? `<button class="p" data-lnext="${fi}" title="Show the next ${PER} names">Next ${PER} ▶</button>`
-      : `<button class="p" data-ldone="${fi}" title="That was the last page: hide the list">✔ Done</button>`)
+      : `<button class="p" data-ldone="${fi}" title="${pages > 1 ? "That was the last page: hide the list" : "Hide the list"}">✔ Done</button>`)
   );
 }
 
