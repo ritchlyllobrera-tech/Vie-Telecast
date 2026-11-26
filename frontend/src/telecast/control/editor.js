@@ -10,9 +10,25 @@ import { renderRundown, delSeg } from "./rundown.js";
 import { libItems, libItem } from "./library.js";
 import { xon } from "./select.js";
 import { render } from "../render.js";
-import { segFolders } from "./awards.js";
+import { awfMap, foldersFor } from "./awards.js";
 
 const MAX_IMG = 6;
+/** one folder picker per location; an Editor only sets their own location's (the others are shown, locked) */
+function awfRows(g) {
+  const m = awfMap(g),
+    all = canControl() || !NET.on || !myLoc();
+  return Object.entries(LOCS)
+    .map(([k, nm]) => {
+      const F = foldersFor(k),
+        off = !all && k !== myLoc(),
+        cur = m[k] || "",
+        lock = off ? ` disabled title="Only the ${esc(nm)} Editor or the Director sets this"` : "";
+      return `<div class="row"><label class="mut g">📍 ${esc(nm)} <select data-awf="${k}" style="width:100%"${lock}><option value="">No folder</option>${F.map(
+        (f) => `<option value="${esc(f.name)}" ${cur === f.name ? "selected" : ""}>📁 ${esc(f.name)} (${f.idx.length})</option>`,
+      ).join("")}${cur && !F.some((f) => f.name === cur) ? `<option value="${esc(cur)}" selected>📁 ${esc(cur)}</option>` : ""}</select></label></div>`;
+    })
+    .join("");
+}
 const PLAT = { teams: "Microsoft Teams", meet: "Google Meet", zoom: "Zoom", other: "Other meeting" };
 const bare = (name) => name.replace(/\.[^.]+$/, "");
 /** the line under the meeting link: is it a link the Director can open? */
@@ -34,7 +50,7 @@ const linkHint = (s) => {
  * "All locations". Controls that change another location's segment are disabled for an Editor
  * (playing / previewing stays allowed: that is their own private flow).
  */
-const LOCKED = "[data-f],[data-cf],[data-yt],[data-allf],[data-drag],[data-mv],[data-rm],[data-open],[data-segdel]";
+const LOCKED = "[data-awf],[data-f],[data-cf],[data-yt],[data-allf],[data-drag],[data-mv],[data-rm],[data-open],[data-segdel]";
 function locRow(g) {
   if (!NET.on) return ""; // working alone: locations don't matter
   const mine = myLoc(),
@@ -116,10 +132,8 @@ function renderEditor(r) {
  <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${esc(m.id)}"><img data-u="${esc(m.id)}" data-bg="${esc(m.id)}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${esc(m.id)}" title="Remove from this segment">✕</button></span>`).join("")}
  <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
  <h2 style="margin-top:10px">🏆 Awards folder</h2>
- <div class="row"><label class="mut g">Lock a folder to this segment <select data-f="awf" style="width:100%"><option value="">None</option>${segFolders()
-   .map((f) => `<option value="${esc(f.name)}" ${g.awf === f.name ? "selected" : ""}>📁 ${esc(f.name)} (${f.idx.length})</option>`)
-   .join("")}${g.awf && !segFolders().some((f) => f.name === g.awf) ? `<option value="${esc(g.awf)}" selected>📁 ${esc(g.awf)} (not available here)</option>` : ""}</select></label></div>
- <div class="mut">While this segment is on, the folder's controls show under the monitor, so its awardees go on screen in one click.</div>
+ <div class="mut">Pick the folder each location uses in this segment. While the segment is on, that location's control room shows the folder's controls under the monitor.</div>
+ ${awfRows(g)}
  <h2 style="margin-top:10px">Autoplay &amp; timing</h2>
  <div class="row"><label class="mut"><input type="checkbox" data-f="am" ${g.am !== false ? "checked" : ""}> 🎵 Auto-play its music when this segment starts</label></div>
  <div class="row"><label class="mut"><input type="checkbox" data-f="av" ${g.av ? "checked" : ""}> 🎬 Auto-play its first video when this segment starts</label></div>
@@ -148,6 +162,17 @@ function renderEditor(r) {
     const pl = ed.querySelector(".pickl");
     if (pl) pl.scrollTop = sc;
   }
+  ed.querySelectorAll("[data-awf]").forEach((x) => {
+    x.onchange = () => {
+      const g = S.segs[S.edit],
+        m = awfMap(g);
+      if (x.value) m[x.dataset.awf] = x.value;
+      else delete m[x.dataset.awf];
+      g.awf = m;
+      quiet();
+      render();
+    };
+  });
   ed.querySelectorAll("[data-f]").forEach((x) => {
     const f = x.dataset.f,
       h = () => {

@@ -1635,3 +1635,6 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
   background: var(--acc);
   color: #fff;
 }
+#qfold .qflocs button {
+  padding: 3px 10px;
+}

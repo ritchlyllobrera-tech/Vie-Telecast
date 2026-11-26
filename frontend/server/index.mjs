@@ -318,6 +318,15 @@ const SEG_KEYS = ["id", "title", "desc", "time", "min", "loc", "yt", "av", "am",
 const DIR_ONLY = ["all", "call", "yt"];
 function keepAll(me, seg, old) {
   if (me.role === "director") return;
+  // an Editor only sets their own location's awards folder; the other locations' stay as they were
+  if (me.loc && ("awf" in seg || (old && "awf" in old))) {
+    const was = old && old.awf,
+      m = typeof was === "string" ? (was ? { cebu: was, ncr: was, cdo: was } : {}) : { ...(was || {}) },
+      mine = isObj(seg.awf) ? seg.awf[me.loc] : typeof seg.awf === "string" ? seg.awf : "";
+    if (mine) m[me.loc] = mine;
+    else delete m[me.loc];
+    seg.awf = m;
+  }
   for (const k of DIR_ONLY) {
     if (old && old[k] !== undefined) seg[k] = old[k];
     else delete seg[k];
@@ -380,7 +389,14 @@ function cleanSeg(x) {
   g.loc = typeof x.loc === "string" && /^[a-z0-9-]{1,20}$/.test(x.loc) ? x.loc : "";
   g.yt = str(x.yt, 300);
   for (const k of ["av", "am", "an", "all", "loop", "wheel"]) if (k in x) g[k] = !!x[k];
-  if ("awf" in x) g.awf = str(x.awf, 120); // the awards folder locked to this segment
+  if ("awf" in x) {
+    // the awards folder locked to this segment, per location: { cebu: "folder", … } (older saves: one name)
+    if (typeof x.awf === "string") g.awf = str(x.awf, 120);
+    else {
+      g.awf = {};
+      if (isObj(x.awf)) for (const [k, v] of Object.entries(x.awf).slice(0, 20)) if (/^[a-z]{1,20}$/.test(k) && typeof v === "string" && v) g.awf[k] = v.slice(0, 120);
+    }
+  }
   if ("endAct" in x) g.endAct = x.endAct === "next" ? "next" : "ask";
   for (const k of ["aud", "vid", "img"]) g[k] = idList(x[k]);
   if ("bg" in x) g.bg = typeof x.bg === "string" && ID_RE.test(x.bg) ? x.bg : null;
