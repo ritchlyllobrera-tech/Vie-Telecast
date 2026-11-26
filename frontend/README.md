@@ -1,12 +1,12 @@
 # Vienovo Telecast Control
 
 Control room and live screen for the Vienovo Philippines Year End & Christmas Party 2026 telecast:
-a timed rundown with auto-pilot, background music and videos for each segment, an employee-awards
+a timed rundown (optionally following the schedule), background music and videos for each segment, an employee-awards
 spotlight, a grand-raffle spin wheel, a ticker, and a pop-out live screen that stays in sync with the
 control room.
 
-It was split out of a single 1.9 GB `index.html.html` export using `../tools/extract-index.mjs` and
-`../tools/split-app.mjs`.
+It was originally split out of a single 1.9 GB `index.html.html` export (the one-time extraction
+scripts have since been removed).
 
 ## Run
 
@@ -197,7 +197,7 @@ src/
 - Media is stored once in the library (`S.lib`). Segments only hold ordered lists of library ids
   (`g.aud`, `g.vid`, `g.img`), so using a song in several segments costs no extra space. Older
   saves are converted automatically (`migrateToLibrary` in `state.js`).
-  `../tools/dedupe-media.mjs` removed the byte-identical duplicate files from `public/assets/media`.
+  Byte-identical duplicate files were removed from `public/assets/media` when the project was set up.
 - Uploads made in the app are stored in this browser's IndexedDB, as before. **Download backup**
   saves the state plus those uploads as JSON, and **Restore backup** loads that file back in. The
   bundled media in `public/assets/media` is not included in the backup.
