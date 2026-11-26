@@ -15,7 +15,16 @@ const shut = new Set();
 const SHORT = { cebu: "Cebu", ncr: "NCR", cdo: "CDO" };
 const locOf = (name) => (S.awLoc && LOCS[S.awLoc[name]] ? S.awLoc[name] : "");
 const seesAll = () => canControl() || !myLoc();
-const visible = (name) => seesAll() || !locOf(name) || locOf(name) === myLoc();
+/* The Director can narrow their own list to one location (kept on this computer only):
+ * "" = every folder; "cebu" etc. = that location's folders plus the ones for all locations. */
+const VKEY = "vienovo-aw-view";
+let view = "";
+try {
+  view = localStorage.getItem(VKEY) || "";
+} catch {}
+const viewLoc = () => (seesAll() && LOCS[view] ? view : "");
+const visible = (name) =>
+  seesAll() ? !viewLoc() || !locOf(name) || locOf(name) === viewLoc() : !locOf(name) || locOf(name) === myLoc();
 function setLoc(name, loc) {
   const o = { ...(S.awLoc || {}) };
   if (LOCS[loc]) o[name] = loc;
@@ -201,7 +210,9 @@ export function renderAwards(r) {
           "</div>"
         );
       }).join("") ||
-      (seesAll() || !S.awFolders || !S.awFolders.length
+      (viewLoc() && allFolders().length
+        ? `<div class="mut">No folders for ${esc(LOCS[viewLoc()])}. Pick "All locations" under Show folders to see every folder.</div>`
+        : seesAll() || !S.awFolders || !S.awFolders.length
         ? '<div class="mut">No folders yet. Name a folder above and press ＋ Create folder, then add employees to it.</div>'
         : `<div class="mut">No folders for ${esc(LOCS[myLoc()] || "your location")} yet. Create one above.</div>`);
   if (al._h !== H) {
@@ -234,6 +245,29 @@ export function renderAwards(r) {
   }
   const ab = $(r, "#aadd");
   if (ab) ab.disabled = !F.length;
+  // the Director's location filter for this list
+  const vr = $(r, "#afvr"),
+    vs = $(r, "#afv");
+  if (vr && vs) {
+    vr.hidden = !seesAll();
+    const n = (k) => allFolders().filter((f) => !k || !locOf(f.name) || locOf(f.name) === k).length,
+      VH =
+        `<option value="" ${viewLoc() ? "" : "selected"}>🌐 All locations (${n("")} folders)</option>` +
+        Object.entries(LOCS)
+          .map(([k, nm]) => `<option value="${k}" ${viewLoc() === k ? "selected" : ""}>📍 ${esc(nm)} (${n(k)} folders)</option>`)
+          .join("");
+    if (vs._h !== VH) {
+      vs._h = VH;
+      vs.innerHTML = VH;
+    }
+    vs.onchange = () => {
+      view = vs.value;
+      try {
+        localStorage.setItem(VKEY, view);
+      } catch {}
+      renderAwards(r);
+    };
+  }
   const B = (sel, f) => al.querySelectorAll(sel).forEach(f);
   // rename a folder in place
   B("[data-rn]", (b) => {
