@@ -57,6 +57,16 @@ export const canControl = () => !creds || creds.role === "director";
 /** The location this computer is operating at ("" when working alone). */
 export const myLoc = () => (creds && creds.loc) || "";
 /**
+ * Segment photos, songs and videos can be locked to one location (g.mloc[id] = "cebu" | "ncr" | "cdo"; none = all).
+ * mediaLoc() = the location whose media this computer plays: an Editor's own, the Director's (Cebu unless set),
+ * "" when working alone (everything). segList(g, k) = the segment's list k ("aud" | "vid" | "img") for it.
+ */
+export const mediaLoc = () => (LOCS[myLoc()] ? myLoc() : creds && creds.role === "director" ? "cebu" : "");
+export const segList = (g, k, loc = mediaLoc()) => {
+  const m = (g && g.mloc) || {};
+  return ((g && g[k]) || []).filter((id) => !LOCS[m[id]] || !loc || m[id] === loc);
+};
+/**
  * May this computer change segment g? The Director and anyone working alone: always. An Editor: segments
  * of their own location and the ones shared by all locations ("" ), so two venues never edit the same one.
  * (The server checks this too.)

@@ -313,11 +313,26 @@ const KINDS = ["aud", "vid", "img", "sfx"];
 const PLATS = ["teams", "meet", "zoom", "other", "youtube"];
 const idList = (a) => (Array.isArray(a) ? a.filter((x) => typeof x === "string" && ID_RE.test(x)).slice(0, 500) : []);
 /** a segment from a client: known fields are type-checked, other fields are kept only when they are plain values */
-const SEG_KEYS = ["id", "title", "desc", "time", "min", "loc", "yt", "av", "am", "an", "all", "loop", "wheel", "awf", "endAct", "aud", "vid", "img", "bg", "call", "editedBy", "editedLoc", "editedAt"];
+const SEG_KEYS = ["id", "title", "desc", "time", "min", "loc", "yt", "av", "am", "an", "all", "loop", "wheel", "awf", "mloc", "endAct", "aud", "vid", "img", "bg", "call", "editedBy", "editedLoc", "editedAt"];
 /** Director-only fields: "📡 All sites", the meeting link (live call) and the YouTube Live link. Anyone else keeps the segment's current value */
 const DIR_ONLY = ["all", "call", "yt"];
 function keepAll(me, seg, old) {
   if (me.role === "director") return;
+  // an Editor keeps the other locations' photos, songs and videos (and where they play) as they were
+  if (me.loc && old) {
+    const om = isObj(old.mloc) ? old.mloc : {},
+      nm = isObj(seg.mloc) ? { ...seg.mloc } : {};
+    for (const [id, l] of Object.entries(nm)) if (l !== me.loc && om[id] !== l) delete nm[id]; // can't lock to another location
+    for (const k of ["aud", "vid", "img"]) {
+      const theirs = (old[k] || []).filter((id) => om[id] && om[id] !== me.loc);
+      seg[k] = Array.isArray(seg[k]) ? seg[k] : [];
+      for (const id of theirs) {
+        if (!seg[k].includes(id)) seg[k].push(id);
+        nm[id] = om[id];
+      }
+    }
+    if (Object.keys(nm).length || "mloc" in old) seg.mloc = nm;
+  }
   // an Editor only sets their own location's awards folder; the other locations' stay as they were
   if (me.loc && ("awf" in seg || (old && "awf" in old))) {
     const was = old && old.awf,
@@ -404,6 +419,12 @@ function cleanSeg(x) {
   }
   if ("endAct" in x) g.endAct = x.endAct === "next" ? "next" : "ask";
   for (const k of ["aud", "vid", "img"]) g[k] = idList(x[k]);
+  // photos, songs and videos locked to one location: { mediaId: "cebu" | "ncr" | "cdo" } (none = all locations)
+  if ("mloc" in x) {
+    g.mloc = {};
+    const ids = new Set([...g.aud, ...g.vid, ...g.img]);
+    if (isObj(x.mloc)) for (const [id, l] of Object.entries(x.mloc).slice(0, 500)) if (ids.has(id) && typeof l === "string" && /^[a-z]{1,20}$/.test(l)) g.mloc[id] = l;
+  }
   if ("bg" in x) g.bg = typeof x.bg === "string" && ID_RE.test(x.bg) ? x.bg : null;
   if ("call" in x) {
     const c = isObj(x.call) ? x.call : {};

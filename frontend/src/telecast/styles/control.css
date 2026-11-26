@@ -1670,3 +1670,15 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
 #qfold .qfolds button {
   padding: 3px 10px;
 }
+/* where a segment photo / song / video plays */
+.mlsel {
+  font-size: 12px;
+  padding: 2px 4px;
+  max-width: 96px;
+}
+.th .mlsel {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin-top: 2px;
+}

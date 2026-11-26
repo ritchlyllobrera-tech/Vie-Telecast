@@ -3,7 +3,7 @@ import { S, dedupe, segYt, rafLoc, poolText, setPool, prizeText, locWinners } fr
 import { save } from "./sync.js";
 import { startRaf, rafOn } from "./playback.js";
 import { now } from "./clock.js";
-import { NET, canControl } from "./net.js";
+import { NET, canControl, segList } from "./net.js";
 
 /**
  * The scene a segment starts in, derived from the segment itself (not from its id, which changes when the rundown is
@@ -11,7 +11,7 @@ import { NET, canControl } from "./net.js";
  * The raffle wheel never comes up by itself: only 🎡 Spin or 👁 Show wheel on Live Screen put it on screen.
  * ("Opening Video" stays a manual scene button: it only differs from "Segment Video" by its caption.)
  */
-const sceneFor = (g) => (segYt(g) ? "live-feed" : g.av && g.vid[0] ? "segment-video" : "standby"); // the wheel only shows when someone presses Spin / Show wheel
+const sceneFor = (g) => (segYt(g) ? "live-feed" : g.av && segList(g, "vid")[0] ? "segment-video" : "standby"); // the wheel only shows when someone presses Spin / Show wheel
 function setSeg(i) {
   const g = S.segs[i];
   S.seg = S.edit = i;
@@ -36,8 +36,8 @@ function setSeg(i) {
     S.scene = "live-feed";
     if (S.cmd && S.cmd.action !== "stop") S.cmd = { ts: Date.now(), kind: "aud", action: "stop", ids: [] };
   } else {
-    const A = [...g.aud],
-      V = g.vid[0],
+    const A = segList(g, "aud"),
+      V = segList(g, "vid")[0],
       ts = Date.now();
     if (g.av && V) {
       S.scene = "segment-video";

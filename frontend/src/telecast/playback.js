@@ -1,4 +1,5 @@
 /** Audio/video playback commands and keeping the control-room monitor in step with the live screen. */
+import { segList } from "./net.js";
 import { $, fm } from "./constants.js";
 import { S } from "./state.js";
 import { done } from "./sync.js";
@@ -218,7 +219,7 @@ const ready = (id) => (pre.get(id) && pre.get(id).url) || "";
 /** first song of the next segment (unless that segment opens with a video) */
 function nextSegSong() {
   const n = S.segs[S.seg + 1];
-  return n && !(n.av && n.vid && n.vid[0]) && n.aud ? n.aud[0] || null : null;
+  return n && !(n.av && segList(n, "vid")[0]) ? segList(n, "aud")[0] || null : null;
 }
 
 const watched = new Set();

@@ -4,7 +4,7 @@ import { $, esc, SCENES, MB, LOCS, meetLink, meetPlat } from "../constants.js";
 import { S, dedupe, segLeft, segYt, ytOn, rafLoc, poolText, setPool, prizeText, setPrize, locWinners } from "../state.js";
 import { LIVE, ownOut, quiet, save, popOut, doAct } from "../sync.js";
 import { storeFile, mediaButton } from "../media.js";
-import { NET, canControl, renderNet, myLoc } from "../net.js";
+import { NET, canControl, renderNet, myLoc, segList } from "../net.js";
 import { startCall, stopCall, sharing, viewers, callLive, canShare } from "../call.js";
 import { vidPlaying, startRaf } from "../playback.js";
 import { buildStage, updateStage } from "../stage/stage.js";
@@ -388,7 +388,7 @@ function renderCallBar(r) {
     open = link ? `<button data-callopen="1" title="${esc(link)}">🔗 Open ${esc(plat)} meeting</button>` : "",
     yid = segYt(g), // this segment is a YouTube Live one: it has its own bar (the meeting options are not mixed in)
     yon = ytOn(),
-    backup = g.vid && g.vid[0] ? `<button id="ytvid" title="Stops YouTube Live and plays this segment's first video on the screens">▶ Recorded video instead</button>` : "";
+    backup = segList(g, "vid")[0] ? `<button id="ytvid" title="Stops YouTube Live and plays this segment's first video on the screens">▶ Recorded video instead</button>` : "";
   let H;
   if (S.bc && canControl() && !sharing()) {
     // broadcasting to every site: one status and at most two buttons
@@ -446,7 +446,7 @@ function renderCallBar(r) {
     yv.onclick = () => {
       S.yt = null;
       S.ytStop = g.id;
-      cmd("vid", "play", [g.vid[0]]);
+      cmd("vid", "play", [segList(g, "vid")[0]]);
     };
   const st = bar.querySelector("#callstop");
   if (st) st.onclick = stopCall;

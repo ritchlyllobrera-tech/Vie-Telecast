@@ -1,6 +1,6 @@
 /** Segment editor (card 3): details, plus music / videos / photos picked from the Media library. */
 import { $, esc, MB, LOCS, meetLink, meetPlat, ytId } from "../constants.js";
-import { NET, canControl, canEditSeg, myLoc } from "../net.js";
+import { NET, canControl, canEditSeg, myLoc, mediaLoc, segList } from "../net.js";
 import { S, segYt } from "../state.js";
 import { ownOut, quiet, save } from "../sync.js";
 import { url } from "../media.js";
@@ -57,7 +57,7 @@ const linkHint = (s) => {
  * "All locations". Controls that change another location's segment are disabled for an Editor
  * (playing / previewing stays allowed: that is their own private flow).
  */
-const LOCKED = "[data-awf],[data-awx],[data-awu],[data-f],[data-cf],[data-yt],[data-allf],[data-drag],[data-mv],[data-rm],[data-open],[data-segdel]";
+const LOCKED = "[data-ml],[data-awf],[data-awx],[data-awu],[data-f],[data-cf],[data-yt],[data-allf],[data-drag],[data-mv],[data-rm],[data-open],[data-segdel]";
 function locRow(g) {
   if (!NET.on) return ""; // working alone: locations don't matter
   const mine = myLoc(),
@@ -101,6 +101,22 @@ function picker(g, kind, label, room) {
  <div class="row"><button class="p" data-padd="1" ${n ? "" : "disabled"}>＋ Add selected (${n})</button><button data-pcancel="1">Cancel</button><span class="mut" data-pmsg></span></div></div>`;
 }
 
+/* ---------- media locked to a location ----------
+ * The Director (or anyone working alone) sees every item and can lock each one to a location.
+ * An Editor sees the items for their location and for all locations; what they add is locked to their location,
+ * and they can only switch an item between their location and all locations. */
+const SHORTL = { cebu: "Cebu", ncr: "NCR", cdo: "CDO" };
+const edAll = () => canControl() || !NET.on || !myLoc();
+/** the items of list k this computer shows in the editor */
+const edList = (g, k) => (edAll() ? g[k] : segList(g, k, myLoc()));
+/** location picker for item `id` of segment g */
+function locSel(g, kind, id) {
+  const v = (g.mloc || {})[id] || "",
+    opts = edAll() ? ["", ...Object.keys(LOCS)] : ["", myLoc()];
+  return `<select class="mlsel${v ? " l-" + v : ""}" data-ml="${esc(id)}" title="Where this ${kind === "aud" ? "song" : kind === "vid" ? "video" : "photo"} plays" aria-label="Location">${opts
+    .map((k) => `<option value="${k}" ${k === v ? "selected" : ""}>${k ? "📍 " + esc(SHORTL[k] || LOCS[k]) : "🌐 All"}</option>`)
+    .join("")}</select>`;
+}
 /** reorder / remove buttons for an item in one of the segment's lists */
 const tools = (kind, id, i, n) =>
   `<button data-mv="${esc(kind)}|${esc(id)}|-1" ${i ? "" : "disabled"} title="Move up">▲</button><button data-mv="${esc(kind)}|${esc(id)}|1" ${i < n - 1 ? "" : "disabled"} title="Move down">▼</button><button class="d xs" data-rm="${esc(kind)}|${esc(id)}" title="Remove from this segment (stays in the library)">✕</button>`;
@@ -115,7 +131,7 @@ const setDrawer = (on) => openPanel(on ? "ed" : "");
 const drawerOpen = () => !!curPanel();
 function renderEditor(r) {
   const g = S.segs[S.edit],
-    items = (k) => g[k].map(libItem).filter(Boolean),
+    items = (k) => edList(g, k).map(libItem).filter(Boolean),
     im = items("img"),
     au = items("aud"),
     vi = items("vid");
@@ -132,11 +148,11 @@ function renderEditor(r) {
      : `<div class="mut">🔒 Only the Director can set the YouTube Live link. ${segYt(g) ? "✔ This segment has a YouTube Live stream." : "No YouTube Live link in this segment."}</div>`
  }
  <div class="mut">When this segment goes live (▶), every Live Screen plays the YouTube stream by itself in the video area. Moving to another segment stops it. The videos below stay as a backup.</div>
- <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${esc(m.id)}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button class="p" data-pv="${esc(m.id)}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
+ <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${esc(m.id)}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span>${locSel(g, "vid", m.id)}<button class="p" data-pv="${esc(m.id)}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
  <div class="row">${picker(g, "vid", "Add videos from library", Infinity)}</div>
- <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${esc(m.id)}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span><button data-pa="${esc(m.id)}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
+ <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${esc(m.id)}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span>${locSel(g, "aud", m.id)}<button data-pa="${esc(m.id)}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
  <div class="row">${picker(g, "aud", "Add songs from library", Infinity)}</div>
- <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${esc(m.id)}"><img data-u="${esc(m.id)}" data-bg="${esc(m.id)}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${esc(m.id)}" title="Remove from this segment">✕</button></span>`).join("")}
+ <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${esc(m.id)}"><img data-u="${esc(m.id)}" data-bg="${esc(m.id)}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${esc(m.id)}" title="Remove from this segment">✕</button>${locSel(g, "img", m.id)}</span>`).join("")}
  <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
  <h2 style="margin-top:10px">🏆 Awards folder</h2>
  <div class="mut">Lock the folders each location uses in this segment (as many as you need). While the segment is on, that location's control room shows them under the monitor.</div>
@@ -263,7 +279,7 @@ function renderEditor(r) {
   });
   // multi-select picker
   const free = () => libItems(openKind).filter((m) => !g[openKind].includes(m.id)),
-    room = () => (openKind === "img" ? MAX_IMG - g.img.length : Infinity),
+    room = () => (openKind === "img" ? MAX_IMG - edList(g, "img").length : Infinity),
     close = () => {
       openKind = "";
       picked.clear();
@@ -320,6 +336,7 @@ function renderEditor(r) {
         .slice(0, room())
         .map((m) => m.id);
       g[openKind].push(...add);
+      if (!edAll()) g.mloc = { ...(g.mloc || {}), ...Object.fromEntries(add.map((id) => [id, myLoc()])) };
       close();
       save();
     };
@@ -328,9 +345,11 @@ function renderEditor(r) {
       (b.onclick = () => {
         const [k, id, d] = b.dataset.mv.split("|"),
           a = g[k],
-          i = a.indexOf(id),
-          j = i + +d;
-        if (i < 0 || j < 0 || j >= a.length) return;
+          vis = edList(g, k),
+          o = vis[vis.indexOf(id) + +d];
+        if (!o) return;
+        const i = a.indexOf(id),
+          j = a.indexOf(o);
         [a[i], a[j]] = [a[j], a[i]];
         save();
       }),
@@ -340,6 +359,11 @@ function renderEditor(r) {
       (b.onclick = () => {
         const [k, id] = b.dataset.rm.split("|");
         g[k] = g[k].filter((x) => x !== id);
+        if (g.mloc && g.mloc[id] && !["aud", "vid", "img"].some((kk) => g[kk].includes(id))) {
+          const m = { ...g.mloc };
+          delete m[id];
+          g.mloc = m;
+        }
         if (k === "img" && S.bgId === id) S.bgId = "";
         save();
       }),
@@ -351,6 +375,17 @@ function renderEditor(r) {
         save();
       }),
   );
+  ed.querySelectorAll("[data-ml]").forEach((x) => {
+    x.onclick = (e) => e.stopPropagation();
+    x.onchange = () => {
+      const g = S.segs[S.edit],
+        m = { ...(g.mloc || {}) };
+      if (LOCS[x.value]) m[x.dataset.ml] = x.value;
+      else delete m[x.dataset.ml];
+      g.mloc = m;
+      save();
+    };
+  });
   ed.querySelectorAll("[data-pa]").forEach(
     (b) =>
       (b.onclick = () => {
