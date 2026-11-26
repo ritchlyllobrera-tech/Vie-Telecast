@@ -97,7 +97,7 @@ function deleteFolder(name) {
   if (S.spotList && S.spotList.award === name) S.spotList = null;
   for (const g of S.segs) {
     const m = awfMap(g);
-    for (const k in m) if (m[k] === name) delete m[k];
+    for (const k in m) m[k] = m[k].filter((x) => x !== name);
     if (g.awf) g.awf = m;
   }
   save();
@@ -123,7 +123,7 @@ function renameFolder(from, to, title) {
   if (cur === from) cur = to;
   for (const g of S.segs) {
     const m = awfMap(g);
-    for (const k in m) if (m[k] === from) m[k] = to;
+    for (const k in m) m[k] = m[k].map((x) => (x === from ? to : x)).filter((x, i, a) => a.indexOf(x) === i);
     if (g.awf) g.awf = m;
   }
   if (S.spotList && S.spotList.award === from) S.spotList = { ...S.spotList, award: to, page: into ? 0 : S.spotList.page };
@@ -194,15 +194,18 @@ function listBtns(f, fi) {
   );
 }
 
-/* ---------- the awards folder locked to a segment ----------
- * A segment can have one folder (g.awf). While that segment is on, its controls show under the monitor,
- * so the Director or an Editor can put its awardees on screen without opening the Employee awards panel. */
-/** a segment's locked folders per location: { cebu: "folder", ncr: "…", cdo: "…" }
- * (older saves kept one folder name for every location) */
+/* ---------- the awards folders locked to a segment ----------
+ * A segment can have folders per location (g.awf). While that segment is on, their controls show under the monitor,
+ * so the Director or an Editor can put the awardees on screen without opening the Employee awards panel. */
+/** a segment's locked folders per location: { cebu: ["folder", …], ncr: […], cdo: […] }
+ * (older saves: one name for every location, or one name per location) */
 export function awfMap(g) {
-  const v = g && g.awf;
-  if (typeof v === "string") return v ? Object.fromEntries(Object.keys(LOCS).map((k) => [k, v])) : {};
-  return v && typeof v === "object" ? { ...v } : {};
+  const v = g && g.awf,
+    list = (x) => (Array.isArray(x) ? x.filter((n) => typeof n === "string" && n) : typeof x === "string" && x ? [x] : []);
+  if (typeof v === "string") return v ? Object.fromEntries(Object.keys(LOCS).map((k) => [k, [v]])) : {};
+  const o = {};
+  if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) if (list(x).length) o[k] = list(x);
+  return o;
 }
 /** folders that can be locked for location `loc`: that location's folders and the ones for all locations */
 export const foldersFor = (loc) => allFolders().filter((f) => !locOf(f.name) || locOf(f.name) === loc);
@@ -214,13 +217,26 @@ const panelLoc = (m) => {
   const own = LOCS[myLoc()] ? myLoc() : "cebu";
   return m[own] ? own : Object.keys(LOCS).find((k) => m[k]) || own;
 };
-/** the folder of the segment that is on, for this computer's location (null = none) */
-export function segFolder() {
+/** the folder picked in the panel on this computer (by name) */
+let pFold = "";
+/** the locked folders of the segment that is on, for the panel's location: [{ name, idx }] */
+function segFolders() {
   const g = S.started ? S.segs[S.seg] : null;
-  if (!g) return null;
+  if (!g) return [];
   const m = awfMap(g),
-    loc = panelLoc(m);
-  return (m[loc] && foldersFor(loc).find((f) => f.name === m[loc])) || null;
+    loc = panelLoc(m),
+    F = foldersFor(loc);
+  return (m[loc] || []).map((n) => F.find((f) => f.name === n)).filter(Boolean);
+}
+/** the folder the panel shows (null = the segment has none here): the picked one, else the one on screen, else the first */
+export function segFolder() {
+  const L = segFolders();
+  return (
+    L.find((f) => f.name === pFold) ||
+    L.find((f) => f.idx.includes(S.spot) || (S.spotList && S.spotList.award === f.name)) ||
+    L[0] ||
+    null
+  );
 }
 export function renderSegFolder(r) {
   const box = $(r, "#qfold");
@@ -230,7 +246,8 @@ export function renderSegFolder(r) {
   if (!f) return (box._h = "");
   const m = awfMap(S.segs[S.seg]),
     locs = seesAll() ? Object.keys(LOCS).filter((k) => m[k]) : [],
-    cl = panelLoc(m);
+    cl = panelLoc(m),
+    SF = segFolders();
   const L = S.spotList && S.spotList.award === f.name ? S.spotList : null,
     pages = Math.max(1, Math.ceil(f.idx.length / PER)),
     pg = L ? Math.min(L.page, pages - 1) : -1,
@@ -238,6 +255,12 @@ export function renderSegFolder(r) {
     H =
       (locs.length > 1
         ? `<div class="row qflocs">${locs.map((k) => `<button data-ql="${k}" class="${k === cl ? "p" : ""}" aria-pressed="${k === cl}" title="Show the folder locked for ${esc(LOCS[k])}">📍 ${esc(SHORT[k] || LOCS[k])}</button>`).join("")}</div>`
+        : "") +
+      (SF.length > 1
+        ? `<div class="row qfolds">${SF.map((x) => {
+            const live = x.idx.includes(S.spot) || !!(S.spotList && S.spotList.award === x.name);
+            return `<button data-qfo="${esc(x.name)}" class="${x === f ? "p" : ""}" aria-pressed="${x === f}" title="Control this folder">📁 ${esc(x.name)} <span class="mut">${x.idx.length}</span>${live ? " ●" : ""}</button>`;
+          }).join("")}</div>`
         : "") +
       `<div class="qfh"><b>🏆 ${esc(awTitle(f.name))}</b>${LOCS[cl] ? ` <span class="locc l-${cl}">📍 ${esc(SHORT[cl] || LOCS[cl])}</span>` : ""} <span class="mut">📁 ${esc(f.name)} · ${f.idx.length} awardee${f.idx.length === 1 ? "" : "s"}</span>${on ? ' <span class="onair">● ON SCREEN</span>' : ""}</div>` +
       `<div class="row"><button class="p" data-qf="next" ${f.idx.length ? "" : "disabled"} title="Show the next awardee of this folder">▶ Next awardee</button>` +
@@ -265,6 +288,14 @@ export function renderSegFolder(r) {
     (b) =>
       (b.onclick = () => {
         pLoc = b.dataset.ql;
+        pFold = "";
+        renderSegFolder(r);
+      }),
+  );
+  box.querySelectorAll("[data-qfo]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        pFold = b.dataset.qfo;
         renderSegFolder(r);
       }),
   );

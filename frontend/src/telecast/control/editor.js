@@ -13,7 +13,7 @@ import { render } from "../render.js";
 import { awfMap, foldersFor } from "./awards.js";
 
 const MAX_IMG = 6;
-/** one folder picker per location; an Editor only sets their own location's (the others are shown, locked) */
+/** the locked folders of each location, with a picker to add more; an Editor only changes their own location's */
 function awfRows(g) {
   const m = awfMap(g),
     all = canControl() || !NET.on || !myLoc();
@@ -21,11 +21,18 @@ function awfRows(g) {
     .map(([k, nm]) => {
       const F = foldersFor(k),
         off = !all && k !== myLoc(),
-        cur = m[k] || "",
-        lock = off ? ` disabled title="Only the ${esc(nm)} Editor or the Director sets this"` : "";
-      return `<div class="row"><label class="mut g">📍 ${esc(nm)} <select data-awf="${k}" style="width:100%"${lock}><option value="">No folder</option>${F.map(
-        (f) => `<option value="${esc(f.name)}" ${cur === f.name ? "selected" : ""}>📁 ${esc(f.name)} (${f.idx.length})</option>`,
-      ).join("")}${cur && !F.some((f) => f.name === cur) ? `<option value="${esc(cur)}" selected>📁 ${esc(cur)}</option>` : ""}</select></label></div>`;
+        cur = m[k] || [],
+        lock = off ? ` disabled title="Only the ${esc(nm)} Editor or the Director sets this"` : "",
+        left = F.filter((f) => !cur.includes(f.name)),
+        chips = cur
+          .map((n, i) => {
+            const f = F.find((x) => x.name === n);
+            return `<span class="awfc">📁 ${esc(n)}${f ? ` <span class="mut">${f.idx.length}</span>` : ""}<button class="xs" data-awu="${k}|${i}" ${i ? "" : "disabled"}${lock} title="Move up" aria-label="Move ${esc(n)} up">↑</button><button class="xs d" data-awx="${k}|${i}"${lock} title="Unlock this folder" aria-label="Unlock ${esc(n)}">✕</button></span>`;
+          })
+          .join("");
+      return `<div class="awfrow"><div class="mut">📍 <b>${esc(nm)}</b> <span>${cur.length ? `${cur.length} folder${cur.length > 1 ? "s" : ""}` : "no folder"}</span></div>${chips ? `<div class="awfcs">${chips}</div>` : ""}<select data-awf="${k}" style="width:100%"${lock} ${left.length ? "" : "disabled"}><option value="">${left.length ? "＋ Add a folder…" : F.length ? "All folders added" : "No folders for this location yet"}</option>${left
+        .map((f) => `<option value="${esc(f.name)}">📁 ${esc(f.name)} (${f.idx.length})</option>`)
+        .join("")}</select></div>`;
     })
     .join("");
 }
@@ -50,7 +57,7 @@ const linkHint = (s) => {
  * "All locations". Controls that change another location's segment are disabled for an Editor
  * (playing / previewing stays allowed: that is their own private flow).
  */
-const LOCKED = "[data-awf],[data-f],[data-cf],[data-yt],[data-allf],[data-drag],[data-mv],[data-rm],[data-open],[data-segdel]";
+const LOCKED = "[data-awf],[data-awx],[data-awu],[data-f],[data-cf],[data-yt],[data-allf],[data-drag],[data-mv],[data-rm],[data-open],[data-segdel]";
 function locRow(g) {
   if (!NET.on) return ""; // working alone: locations don't matter
   const mine = myLoc(),
@@ -132,7 +139,7 @@ function renderEditor(r) {
  <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${esc(m.id)}"><img data-u="${esc(m.id)}" data-bg="${esc(m.id)}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${esc(m.id)}" title="Remove from this segment">✕</button></span>`).join("")}
  <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
  <h2 style="margin-top:10px">🏆 Awards folder</h2>
- <div class="mut">Pick the folder each location uses in this segment. While the segment is on, that location's control room shows the folder's controls under the monitor.</div>
+ <div class="mut">Lock the folders each location uses in this segment (as many as you need). While the segment is on, that location's control room shows them under the monitor.</div>
  ${awfRows(g)}
  <h2 style="margin-top:10px">Autoplay &amp; timing</h2>
  <div class="row"><label class="mut"><input type="checkbox" data-f="am" ${g.am !== false ? "checked" : ""}> 🎵 Auto-play its music when this segment starts</label></div>
@@ -162,17 +169,34 @@ function renderEditor(r) {
     const pl = ed.querySelector(".pickl");
     if (pl) pl.scrollTop = sc;
   }
-  ed.querySelectorAll("[data-awf]").forEach((x) => {
-    x.onchange = () => {
+  {
+    // locked folders: add one, unlock one, move one up (the panel lists them in this order)
+    const setAwf = (k, f) => {
       const g = S.segs[S.edit],
         m = awfMap(g);
-      if (x.value) m[x.dataset.awf] = x.value;
-      else delete m[x.dataset.awf];
+      m[k] = f(m[k] || []);
+      if (!m[k].length) delete m[k];
       g.awf = m;
       quiet();
       render();
     };
-  });
+    ed.querySelectorAll("[data-awf]").forEach((x) => {
+      x.onchange = () => x.value && setAwf(x.dataset.awf, (l) => (l.includes(x.value) ? l : [...l, x.value]));
+    });
+    ed.querySelectorAll("[data-awx]").forEach((b) => {
+      const [k, i] = b.dataset.awx.split("|");
+      b.onclick = () => setAwf(k, (l) => l.filter((_, j) => j !== +i));
+    });
+    ed.querySelectorAll("[data-awu]").forEach((b) => {
+      const [k, i] = b.dataset.awu.split("|");
+      b.onclick = () =>
+        setAwf(k, (l) => {
+          const a = [...l];
+          [a[+i - 1], a[+i]] = [a[+i], a[+i - 1]];
+          return a;
+        });
+    });
+  }
   ed.querySelectorAll("[data-f]").forEach((x) => {
     const f = x.dataset.f,
       h = () => {

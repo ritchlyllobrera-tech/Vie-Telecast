@@ -322,8 +322,8 @@ function keepAll(me, seg, old) {
   if (me.loc && ("awf" in seg || (old && "awf" in old))) {
     const was = old && old.awf,
       m = typeof was === "string" ? (was ? { cebu: was, ncr: was, cdo: was } : {}) : { ...(was || {}) },
-      mine = isObj(seg.awf) ? seg.awf[me.loc] : typeof seg.awf === "string" ? seg.awf : "";
-    if (mine) m[me.loc] = mine;
+      mine = isObj(seg.awf) ? seg.awf[me.loc] : typeof seg.awf === "string" && seg.awf ? [seg.awf] : null;
+    if (mine && mine.length) m[me.loc] = mine;
     else delete m[me.loc];
     seg.awf = m;
   }
@@ -394,7 +394,12 @@ function cleanSeg(x) {
     if (typeof x.awf === "string") g.awf = str(x.awf, 120);
     else {
       g.awf = {};
-      if (isObj(x.awf)) for (const [k, v] of Object.entries(x.awf).slice(0, 20)) if (/^[a-z]{1,20}$/.test(k) && typeof v === "string" && v) g.awf[k] = v.slice(0, 120);
+      if (isObj(x.awf))
+        for (const [k, v] of Object.entries(x.awf).slice(0, 20)) {
+          if (!/^[a-z]{1,20}$/.test(k)) continue;
+          const l = (Array.isArray(v) ? v : [v]).filter((n) => typeof n === "string" && n).slice(0, 100).map((n) => n.slice(0, 120));
+          if (l.length) g.awf[k] = [...new Set(l)];
+        }
     }
   }
   if ("endAct" in x) g.endAct = x.endAct === "next" ? "next" : "ask";

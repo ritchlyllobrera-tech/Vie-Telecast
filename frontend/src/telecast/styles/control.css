@@ -1638,3 +1638,35 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
 #qfold .qflocs button {
   padding: 3px 10px;
 }
+/* locked folders in the segment editor */
+.awfrow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0;
+}
+.awfcs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.awfc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 13px;
+}
+.awfc button.xs {
+  padding: 1px 6px;
+  font-size: 11px;
+}
+#qfold .qfolds {
+  flex-wrap: wrap;
+}
+#qfold .qfolds button {
+  padding: 3px 10px;
+}
