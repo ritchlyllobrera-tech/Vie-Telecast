@@ -95,6 +95,7 @@ function deleteFolder(name) {
   setTitle(name, "");
   setLoc(name, "");
   if (S.spotList && S.spotList.award === name) S.spotList = null;
+  for (const g of S.segs) if (g.awf === name) g.awf = "";
   save();
 }
 
@@ -116,6 +117,7 @@ function renameFolder(from, to, title) {
   for (const a of S.awards) if ((a.award || "Award") === from) a.award = to;
   S.awFolders = (S.awFolders || []).map((x) => (x === from ? to : x)).filter((x, i, a) => a.indexOf(x) === i);
   if (cur === from) cur = to;
+  for (const g of S.segs) if (g.awf === from) g.awf = to;
   if (S.spotList && S.spotList.award === from) S.spotList = { ...S.spotList, award: to, page: into ? 0 : S.spotList.page };
   if (shut.delete(from)) shut.add(to);
   save();
@@ -182,6 +184,69 @@ function listBtns(f, fi) {
       ? `<button class="p" data-lnext="${fi}" title="Show the next ${PER} names">Next ${PER} ▶</button>`
       : `<button class="p" data-ldone="${fi}" title="${pages > 1 ? "That was the last page: hide the list" : "Hide the list"}">✔ Done</button>`)
   );
+}
+
+/* ---------- the awards folder locked to a segment ----------
+ * A segment can have one folder (g.awf). While that segment is on, its controls show under the monitor,
+ * so the Director or an Editor can put its awardees on screen without opening the Employee awards panel. */
+/** folders a segment can be locked to on this computer (an Editor: their location's and all-location ones) */
+export const segFolders = () => allFolders().filter((f) => seesAll() || !locOf(f.name) || locOf(f.name) === myLoc());
+/** the folder of the segment that is on (null = none, or it is not shown on this computer) */
+export function segFolder() {
+  const g = S.started ? S.segs[S.seg] : null;
+  return (g && g.awf && segFolders().find((f) => f.name === g.awf)) || null;
+}
+export function renderSegFolder(r) {
+  const box = $(r, "#qfold");
+  if (!box) return;
+  const f = segFolder();
+  box.hidden = !f;
+  if (!f) return (box._h = "");
+  const L = S.spotList && S.spotList.award === f.name ? S.spotList : null,
+    pages = Math.max(1, Math.ceil(f.idx.length / PER)),
+    pg = L ? Math.min(L.page, pages - 1) : -1,
+    on = f.idx.includes(S.spot) || !!L,
+    H =
+      `<div class="qfh"><b>🏆 ${esc(awTitle(f.name))}</b> <span class="mut">📁 ${esc(f.name)} · ${f.idx.length} awardee${f.idx.length === 1 ? "" : "s"}</span>${on ? ' <span class="onair">● ON SCREEN</span>' : ""}</div>` +
+      `<div class="row"><button class="p" data-qf="next" ${f.idx.length ? "" : "disabled"} title="Show the next awardee of this folder">▶ Next awardee</button>` +
+      (f.idx.length > 1
+        ? L
+          ? (pages > 1 ? `<button data-qf="prev" ${pg ? "" : "disabled"}>◀ Back</button>` : "") +
+            (pg < pages - 1 ? `<button class="p" data-qf="more">Next ${PER} ▶</button>` : `<button data-qf="done">✔ Done</button>`) +
+            `<span class="mut">names ${pg * PER + 1}–${Math.min(f.idx.length, (pg + 1) * PER)} of ${f.idx.length}</span>`
+          : `<button data-qf="list" title="Show all of this folder's names on the Live Screen (${PER} at a time)">📋 Show all names</button>`
+        : "") +
+      `<button data-qf="hide" ${on ? "" : "disabled"} title="Take this folder off the Live Screen">🙈 Hide</button></div>` +
+      (f.idx.length
+        ? `<div class="qfl">${f.idx
+            .map((i, n) => {
+              const a = S.awards[i];
+              return `<button class="${i === S.spot ? "act" : ""}" data-qs="${i}" aria-pressed="${i === S.spot}" title="${i === S.spot ? "On screen: click to hide" : "Show on the Live Screen"}">${n + 1}. ${MEDAL[a.medal] ? MEDAL[a.medal][0] + " " : ""}${esc(a.name)}</button>`;
+            })
+            .join("")}</div>`
+        : '<div class="mut">This folder is empty: add employees in 🏆 Employee awards.</div>');
+  if (box._h !== H) {
+    box._h = H;
+    box.innerHTML = H;
+  }
+  box.querySelectorAll("[data-qs]").forEach((b) => (b.onclick = () => show(+b.dataset.qs === S.spot ? -1 : +b.dataset.qs)));
+  box.querySelectorAll("[data-qf]").forEach((b) => {
+    b.onclick = () => {
+      const k = b.dataset.qf;
+      if (k === "next") show(f.idx[Math.min(f.idx.length - 1, f.idx.indexOf(S.spot) + 1)]);
+      else if (k === "list") showList(f.name, 0);
+      else if (k === "more") showList(f.name, Math.min(pages - 1, pg + 1));
+      else if (k === "prev") showList(f.name, Math.max(0, pg - 1));
+      else if (k === "done") {
+        S.spotList = null;
+        save();
+      } else if (k === "hide") {
+        if (f.idx.includes(S.spot)) S.spot = -1;
+        if (L) S.spotList = null;
+        save();
+      }
+    };
+  });
 }
 
 export function renderAwards(r) {

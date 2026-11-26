@@ -12,7 +12,7 @@ import { setSeg, cmd, playYt, stopYt, endBc, spin, stopSfx, pauseShow, resumeSho
 import { renderRundown } from "./rundown.js";
 import { openBulk, refreshBulk } from "./bulk.js";
 import { now } from "../clock.js";
-import { renderAwards, nextAward, medalOpts, createFolder, setCurFolder } from "./awards.js";
+import { renderAwards, nextAward, medalOpts, createFolder, setCurFolder, renderSegFolder, segFolder } from "./awards.js";
 import { renderEditor, setDrawer, drawerOpen, openPanel, curPanel } from "./editor.js";
 import { renderLibrary, renderSfx } from "./library.js";
 
@@ -120,7 +120,7 @@ let rst = 0;
 function buildControl(r) {
   r.innerHTML = `<div class="aur"></div><header id="top"><button id="sidet" title="Show the rundown" aria-label="Show the rundown">☰ Rundown</button><div class="brand"><span class="bmark">🎄</span><div><h1>VIENOVO TELECAST</h1><small>Control room · Year End &amp; Christmas 2026</small></div></div><span id="net" class="row"></span><div class="showctl"><button class="p" id="go"></button><button id="rst" title="Start again from segment 1">⏮ Restart</button><span id="shst"></span></div><span class="sp"></span><b id="clk" class="tm"></b><span class="live-dot"></span><span class="mut" id="sv">✔ Auto-saved</span><button class="p" id="pop">Pop-out Live Screen ↗</button><button id="fs" title="Fullscreen preview of the monitor">⛶<span class="lbl"> Fullscreen</span></button></header>
  <aside id="side" aria-label="Rundown"><div class="shead"><h2 title="✎ edits a segment · ▶ takes it live · ✔ Finish &amp; next skips ahead when a segment ends early (or press the → key). With Auto-Pilot, a segment starts at its set clock time. 1 min 30 s before a segment ends you get a warning; when its time is up it asks you (or moves on by itself, if set in the Segment editor).">Rundown</h2><button id="sidec" title="Hide / show the segment list" aria-label="Hide or show the segment list">«</button></div><div id="rd"></div><div class="sfoot"><button id="pv">◀ Prev</button><button class="p g" id="nx" title="Finished early? Go straight to the next segment (shortcut: → key)">✔ Finish &amp; next ▶</button><button id="bulkb" title="Add, replace or remove the same music, videos or photos in many segments (e.g. all three locations) at once">🔁 Bulk media</button></div></aside>
- <main id="center"><section id="mon"><div class="monh"><h2 id="montl">Live program monitor</h2><span class="mut" id="np"></span></div><div id="callbar" class="row callbar"></div><div id="prevwrap"><div id="prev"></div></div><div class="below"><div class="row scn"><span id="scenes"></span></div><div class="row tmr"><span id="rem"></span></div><div id="nxb" class="row"><b></b><button class="p" id="nxnow">Start now</button><button id="nxhold">Hold</button></div><div id="quick" class="row" hidden><span id="qwheel" class="row" hidden><input id="qprize" placeholder="🎁 Prize for this spin"><button class="p" id="qspin">🎡 Spin</button><button id="qnext">✔ Next round</button></span><span id="qaw" class="row" hidden><button class="p" id="qanx">⏭ Next award</button></span></div></div></section></main>
+ <main id="center"><section id="mon"><div class="monh"><h2 id="montl">Live program monitor</h2><span class="mut" id="np"></span></div><div id="callbar" class="row callbar"></div><div id="prevwrap"><div id="prev"></div></div><div class="below"><div class="row scn"><span id="scenes"></span></div><div class="row tmr"><span id="rem"></span></div><div id="nxb" class="row"><b></b><button class="p" id="nxnow">Start now</button><button id="nxhold">Hold</button></div><div id="quick" class="row" hidden><span id="qwheel" class="row" hidden><input id="qprize" placeholder="🎁 Prize for this spin"><button class="p" id="qspin">🎡 Spin</button><button id="qnext">✔ Next round</button></span><span id="qaw" class="row" hidden><button class="p" id="qanx">⏭ Next award</button></span><div id="qfold" hidden></div></div></div></section></main>
  <nav id="rail" aria-label="Tools"><button data-panel="lib" title="Media library"><i>🎞</i><span>Media</span><em class="bdg" id="bg-lib"></em></button><button data-panel="sfx" title="Sound effects"><i>🔊</i><span>Effects</span></button><button data-panel="tk" title="Ticker &amp; default live background"><i>📰</i><span>Ticker</span></button><button data-panel="aw" title="Employee awards"><i>🏅</i><span>Awards</span><em class="bdg" id="bg-aw"></em></button><button data-panel="raf" title="Grand raffle"><i>🎡</i><span>Raffle</span><em class="bdg" id="bg-raf"></em></button><button data-panel="ed" title="Segment editor"><i>✎</i><span>Segment</span></button><span class="sp"></span><button data-panel="set" title="Show settings, snow, backup"><i>⚙</i><span>Settings</span></button></nav>
  <aside id="drawer" aria-labelledby="dtitle"><div class="dhead"><b id="dtitle">Segment settings</b><button id="dclose" title="Close (Esc)" aria-label="Close">✕</button></div><div class="dbody">
  <section class="dpanel" data-p="lib"><div id="upst" class="mut" style="display:none;padding:6px 8px;border:1px dashed var(--acc);border-radius:10px;margin-bottom:8px"></div><div id="lib"></div></section>
@@ -473,12 +473,14 @@ function renderControl(r) {
     setTx(p, canControl() ? "Pop-out Live Screen ↗" : "Pop-out my screen ↗");
     p.title = canControl() ? "Opens the Live Screen for all Cebu screens" : "Opens this site's projector screen";
     const g = S.segs[S.seg] || {},
-      wheel = !!g.wheel || S.scene === "spin-wheel",
-      aw = S.spot >= 0 || /award/i.test(g.title || ""),
+      wheel = S.scene === "spin-wheel" || /raffle/i.test(g.title || ""),
+      fold = !!segFolder(),
+      aw = !fold && (S.spot >= 0 || /award/i.test(g.title || "")),
       q = $(r, "#quick");
     $(r, "#qwheel").hidden = !wheel;
     $(r, "#qaw").hidden = !aw;
-    q.hidden = !(wheel || aw);
+    renderSegFolder(r);
+    q.hidden = !(wheel || aw || fold);
     badges(r);
   }
   refreshBulk();

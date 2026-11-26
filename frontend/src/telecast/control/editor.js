@@ -10,6 +10,7 @@ import { renderRundown, delSeg } from "./rundown.js";
 import { libItems, libItem } from "./library.js";
 import { xon } from "./select.js";
 import { render } from "../render.js";
+import { segFolders } from "./awards.js";
 
 const MAX_IMG = 6;
 const PLAT = { teams: "Microsoft Teams", meet: "Google Meet", zoom: "Zoom", other: "Other meeting" };
@@ -114,6 +115,11 @@ function renderEditor(r) {
  <div class="row">${picker(g, "aud", "Add songs from library", Infinity)}</div>
  <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${esc(m.id)}"><img data-u="${esc(m.id)}" data-bg="${esc(m.id)}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${esc(m.id)}" title="Remove from this segment">✕</button></span>`).join("")}
  <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
+ <h2 style="margin-top:10px">🏆 Awards folder</h2>
+ <div class="row"><label class="mut g">Lock a folder to this segment <select data-f="awf" style="width:100%"><option value="">None</option>${segFolders()
+   .map((f) => `<option value="${esc(f.name)}" ${g.awf === f.name ? "selected" : ""}>📁 ${esc(f.name)} (${f.idx.length})</option>`)
+   .join("")}${g.awf && !segFolders().some((f) => f.name === g.awf) ? `<option value="${esc(g.awf)}" selected>📁 ${esc(g.awf)} (not available here)</option>` : ""}</select></label></div>
+ <div class="mut">While this segment is on, the folder's controls show under the monitor, so its awardees go on screen in one click.</div>
  <h2 style="margin-top:10px">Autoplay &amp; timing</h2>
  <div class="row"><label class="mut"><input type="checkbox" data-f="am" ${g.am !== false ? "checked" : ""}> 🎵 Auto-play its music when this segment starts</label></div>
  <div class="row"><label class="mut"><input type="checkbox" data-f="av" ${g.av ? "checked" : ""}> 🎬 Auto-play its first video when this segment starts</label></div>

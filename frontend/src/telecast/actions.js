@@ -7,10 +7,11 @@ import { NET, canControl } from "./net.js";
 
 /**
  * The scene a segment starts in, derived from the segment itself (not from its id, which changes when the rundown is
- * reordered or renamed): YouTube Live link -> live feed, raffle / wheel segment -> wheel, video that autoplays -> segment video.
+ * reordered or renamed): YouTube Live link -> live feed, video that autoplays -> segment video, otherwise standby.
+ * The raffle wheel never comes up by itself: only 🎡 Spin or 👁 Show wheel on Live Screen put it on screen.
  * ("Opening Video" stays a manual scene button: it only differs from "Segment Video" by its caption.)
  */
-const sceneFor = (g) => (segYt(g) ? "live-feed" : g.wheel ? "spin-wheel" : g.av && g.vid[0] ? "segment-video" : "standby");
+const sceneFor = (g) => (segYt(g) ? "live-feed" : g.av && g.vid[0] ? "segment-video" : "standby"); // the wheel only shows when someone presses Spin / Show wheel
 function setSeg(i) {
   const g = S.segs[i];
   S.seg = S.edit = i;

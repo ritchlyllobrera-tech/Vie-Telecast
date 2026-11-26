@@ -313,7 +313,7 @@ const KINDS = ["aud", "vid", "img", "sfx"];
 const PLATS = ["teams", "meet", "zoom", "other", "youtube"];
 const idList = (a) => (Array.isArray(a) ? a.filter((x) => typeof x === "string" && ID_RE.test(x)).slice(0, 500) : []);
 /** a segment from a client: known fields are type-checked, other fields are kept only when they are plain values */
-const SEG_KEYS = ["id", "title", "desc", "time", "min", "loc", "yt", "av", "am", "an", "all", "loop", "wheel", "endAct", "aud", "vid", "img", "bg", "call", "editedBy", "editedLoc", "editedAt"];
+const SEG_KEYS = ["id", "title", "desc", "time", "min", "loc", "yt", "av", "am", "an", "all", "loop", "wheel", "awf", "endAct", "aud", "vid", "img", "bg", "call", "editedBy", "editedLoc", "editedAt"];
 /** Director-only fields: "📡 All sites", the meeting link (live call) and the YouTube Live link. Anyone else keeps the segment's current value */
 const DIR_ONLY = ["all", "call", "yt"];
 function keepAll(me, seg, old) {
@@ -380,6 +380,7 @@ function cleanSeg(x) {
   g.loc = typeof x.loc === "string" && /^[a-z0-9-]{1,20}$/.test(x.loc) ? x.loc : "";
   g.yt = str(x.yt, 300);
   for (const k of ["av", "am", "an", "all", "loop", "wheel"]) if (k in x) g[k] = !!x[k];
+  if ("awf" in x) g.awf = str(x.awf, 120); // the awards folder locked to this segment
   if ("endAct" in x) g.endAct = x.endAct === "next" ? "next" : "ask";
   for (const k of ["aud", "vid", "img"]) g[k] = idList(x[k]);
   if ("bg" in x) g.bg = typeof x.bg === "string" && ID_RE.test(x.bg) ? x.bg : null;

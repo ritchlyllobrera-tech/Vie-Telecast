@@ -12,9 +12,6 @@ try {
 fixSegs();
 function fixSegs() {
   S.segs = S.segs.map((g) => ({ desc: "", time: "", av: false, bg: null, ...g }));
-  S.segs.forEach((g) => {
-    if (g.wheel === undefined) g.wheel = /raffle|wheel|stars of the night/i.test(g.title);
-  });
   if (!S.lib) migrateToLibrary();
   delete S.media;
   for (const g of S.segs) for (const k of ["aud", "vid", "img"]) g[k] = g[k] || [];
