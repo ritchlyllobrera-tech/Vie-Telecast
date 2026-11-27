@@ -150,7 +150,7 @@ function renderEditor(r) {
  <div class="mut">When this segment goes live (▶), every Live Screen plays the YouTube stream by itself in the video area. Moving to another segment stops it. The videos below stay as a backup.</div>
  <h2 style="margin-top:10px">Videos for the live screen</h2>${vi.map((m, i) => `<div class="row${xon("ed:vid:" + m.id)}" data-sel="ed:vid:${esc(m.id)}"><span class="g">🎬 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span>${locSel(g, "vid", m.id)}<button class="p" data-pv="${esc(m.id)}">▶ Live</button><button data-tg="vid">⏯</button><button data-st="1">⏹</button>${tools("vid", m.id, i, vi.length)}</div>`).join("")}
  <div class="row">${picker(g, "vid", "Add videos from library", Infinity)}</div>
- <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${esc(m.id)}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span>${locSel(g, "aud", m.id)}<button data-pa="${esc(m.id)}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
+ <h2 style="margin-top:10px">Music playlist (plays in this order)</h2>${au.length ? `<div class="row"><button class="p" data-pa="1">▶ Play all</button><button data-tg="aud">⏯</button><button data-st="1">⏹</button><label class="mut"><input type="checkbox" data-f="loop" ${g.loop ? "checked" : ""}> 🔁 Keep playing (repeat the playlist)</label><label class="mut" title="Plays this segment's songs in a random order. Only changes this control room's playback."><input type="checkbox" data-shuf="1" ${S.shuf && S.shuf[g.id] ? "checked" : ""}> 🔀 Shuffle</label></div>` : ""}${au.map((m, i) => `<div class="row${xon("ed:aud:" + m.id)}" data-sel="ed:aud:${esc(m.id)}"><span class="g">${i + 1}. 🎵 ${esc(bare(m.name))} <span class="mut">${m.size ? MB(m.size) : ""}</span></span>${locSel(g, "aud", m.id)}<button data-pa="${esc(m.id)}" title="Play this song">▶</button>${tools("aud", m.id, i, au.length)}</div>`).join("")}
  <div class="row">${picker(g, "aud", "Add songs from library", Infinity)}</div>
  <h2 style="margin-top:10px">Backgrounds (${im.length}/${MAX_IMG}): click a picture to show it on the Live Screen (click again for the default)</h2>${im.map((m) => `<span class="th${xon("ed:img:" + m.id)}" data-sel="ed:img:${esc(m.id)}"><img data-u="${esc(m.id)}" data-bg="${esc(m.id)}" class="${S.bgId === m.id ? "sel" : ""}" alt="" title="${esc(m.name)}"><button class="x d xs" data-rm="img|${esc(m.id)}" title="Remove from this segment">✕</button>${locSel(g, "img", m.id)}</span>`).join("")}
  <div class="row">${picker(g, "img", "Add photos from library", MAX_IMG - im.length)}</div>
@@ -395,6 +395,16 @@ function renderEditor(r) {
   );
   ed.querySelectorAll("[data-pv]").forEach((b) => (b.onclick = () => cmd("vid", "play", [b.dataset.pv])));
   ed.querySelectorAll("[data-tg]").forEach((b) => (b.onclick = () => cmd(b.dataset.tg, "toggle")));
+  ed.querySelectorAll("[data-shuf]").forEach((x) => {
+    x.onchange = () => {
+      const id = S.segs[S.edit].id,
+        o = { ...(S.shuf || {}) };
+      if (x.checked) o[id] = true;
+      else delete o[id];
+      S.shuf = o;
+      save();
+    };
+  });
   ed.querySelectorAll("[data-st]").forEach((b) => (b.onclick = () => cmd("aud", "stop")));
 }
 

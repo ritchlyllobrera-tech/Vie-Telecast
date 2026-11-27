@@ -29,7 +29,7 @@ const CK = "vtc_user";
 const LOCAL = ["edit", "monSound", "monVid", "sfx", "sfxVol"];
 // what is playing / on screen (and the snow effect: each location keeps its own). An Editor runs their own flow with these on their own computer;
 // only the Director's copy is the program that the Live screens show.
-const PLAY = ["yt", "ytStop", "cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "autoTime", "scene", "bgId", "spot", "spotTs", "spotList", "raffle", "rafLoc", "snow", "sfx", "sfxVol"];
+const PLAY = ["yt", "ytStop", "cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "autoTime", "scene", "bgId", "spot", "spotTs", "spotList", "shuf", "raffle", "rafLoc", "snow", "sfx", "sfxVol"];
 // show-wide content an Editor may change too (the Director sends it with the rest of the show)
 const SHARED = ["ticker", "defBg", "awards", "awFolders", "awTitle", "awLoc", "pool", "pools", "winners", "prize", "prizes", "rafMusic", "rafName"];
 const pickShared = (o) => Object.fromEntries(SHARED.filter((k) => k in o).map((k) => [k, o[k]]));

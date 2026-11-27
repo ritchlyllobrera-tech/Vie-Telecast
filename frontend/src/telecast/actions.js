@@ -12,6 +12,17 @@ import { NET, canControl, segList } from "./net.js";
  * ("Opening Video" stays a manual scene button: it only differs from "Segment Video" by its caption.)
  */
 const sceneFor = (g) => (segYt(g) ? "live-feed" : g.av && segList(g, "vid")[0] ? "segment-video" : "standby"); // the wheel only shows when someone presses Spin / Show wheel
+/** 🔀 is shuffle on for segment `segId` (on this control room)? */
+const shuffled = (segId) => !!(S.shuf && S.shuf[segId]);
+/** the songs in a random order; `first` (if given) stays first */
+function mix(ids, first) {
+  const a = ids.filter((x) => x !== first);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return first && ids.includes(first) ? [first, ...a] : a;
+}
 function setSeg(i) {
   const g = S.segs[i];
   S.seg = S.edit = i;
@@ -36,7 +47,7 @@ function setSeg(i) {
     S.scene = "live-feed";
     if (S.cmd && S.cmd.action !== "stop") S.cmd = { ts: Date.now(), kind: "aud", action: "stop", ids: [] };
   } else {
-    const A = segList(g, "aud"),
+    const A = shuffled(g.id) ? mix(segList(g, "aud")) : segList(g, "aud"),
       V = segList(g, "vid")[0],
       ts = Date.now();
     if (g.av && V) {
@@ -84,7 +95,13 @@ const cmd = (kind, action, ids, start) => {
     save();
     return;
   }
-  S.cmd = { ts: Date.now(), kind, action, ids: ids || [], seg: S.segs[S.edit].id, start: start || 0 };
+  const seg = S.segs[S.edit].id;
+  ids = ids || [];
+  if (kind === "aud" && action === "play" && ids.length > 1 && shuffled(seg)) {
+    ids = mix(ids, ids[start || 0]); // the song pressed plays first, then the rest in a random order
+    start = 0;
+  }
+  S.cmd = { ts: Date.now(), kind, action, ids, seg, start: start || 0 };
   if (action === "play" && kind === "vid") {
     S.scene = "segment-video";
     S.yt = null; // the recorded video replaces YouTube Live

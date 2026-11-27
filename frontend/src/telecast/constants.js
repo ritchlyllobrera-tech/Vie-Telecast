@@ -55,6 +55,7 @@ const DEF = {
   rafLoc: "", // the location this computer's raffle runs for (an Editor: their own)
   winners: [],
   spot: -1,
+  shuf: {}, // 🔀 shuffle the songs of a segment: { segId: true } (each control room's own choice)
   spotList: null, // { award, page, ts }: the Live Screen lists an award's awardees, PER names per page
   raffle: null,
   segStart: Date.now(),
