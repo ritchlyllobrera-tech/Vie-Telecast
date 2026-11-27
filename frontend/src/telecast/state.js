@@ -42,19 +42,35 @@ function migrateToLibrary() {
   if (alias[S.bgId]) S.bgId = alias[S.bgId];
   if (S.cmd && S.cmd.ids) S.cmd.ids = S.cmd.ids.map((id) => alias[id] || id);
 }
-function dedupe(t) {
+/** most raffle participants per location */
+const MAXN = 250;
+/**
+ * Clean a raffle names list: one name per line, blank lines dropped, a name repeated (any capitals / spacing)
+ * kept once, this location's winners left out, at most MAXN names (the first ones in the list).
+ * Returns { names, dup: repeats removed, won: winners left out, over: names past the limit }.
+ */
+function cleanList(t) {
   const seen = new Set(),
-    o = [],
+    names = [],
     W = new Set(locWinners().map((w) => norm(w.name)));
-  for (const l of t.split(/\r?\n/)) {
-    const x = l.trim().replace(/\s+/g, " ");
-    if (x && !seen.has(norm(x)) && !W.has(norm(x))) {
-      seen.add(norm(x));
-      o.push(x);
+  let dup = 0,
+    won = 0,
+    over = 0;
+  for (const l of String(t || "").split(/\r?\n/)) {
+    const x = l.trim().replace(/\s+/g, " "),
+      k = norm(x);
+    if (!x) continue;
+    if (seen.has(k)) dup++;
+    else {
+      seen.add(k);
+      if (W.has(k)) won++;
+      else if (names.length >= MAXN) over++;
+      else names.push(x);
     }
   }
-  return o;
+  return { names, dup, won, over };
 }
+const dedupe = (t) => cleanList(t).names;
 /** ms left in the current segment (frozen while the show is paused / not started). */
 export function segLeft() {
   const g = S.segs[S.seg] || S.segs[0];
@@ -80,4 +96,4 @@ const prizeText = () => (S.prizes && typeof S.prizes[rafLoc()] === "string" ? S.
 const setPrize = (t) => (S.prizes = { ...(S.prizes || {}), [rafLoc()]: t });
 /** winners of this computer's raffle location (older winners without a location count as Cebu) */
 const locWinners = () => (S.winners || []).filter((w) => (w.loc || "cebu") === rafLoc());
-export { S, fixSegs, dedupe, segYt, ytOn, awTitle, rafLoc, poolText, setPool, prizeText, setPrize, locWinners };
+export { S, fixSegs, dedupe, cleanList, MAXN, segYt, ytOn, awTitle, rafLoc, poolText, setPool, prizeText, setPrize, locWinners };

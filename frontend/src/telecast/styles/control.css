@@ -1682,3 +1682,10 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
   max-width: none;
   margin-top: 2px;
 }
+#pmsg:empty {
+  display: none;
+}
+#pmsg.warn {
+  color: var(--warn, #b45309);
+  font-weight: 600;
+}
