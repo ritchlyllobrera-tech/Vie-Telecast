@@ -389,7 +389,7 @@ function buildControl(r) {
   const mark = (st, w) => {
     w = w || curWin();
     if (!w || w.st) return;
-    if (st === "absent" && !confirm(`${w.name} is not present?\nThe name stays in the winners history and does not go back to the names list.${w.prize ? `\n"${w.prize}" goes back to the top of the prize list for the next spin.` : ""}`)) return;
+    if (st === "absent" && !confirm(`${w.name} is not present?\nThe name stays in the winners history and does not go back to the names list (only "Clear & put names back" returns it).${w.prize ? `\n"${w.prize}" goes back to the top of the prize list for the next spin.` : ""}`)) return;
     markWinner(w, st);
   };
   B("#qclaim", () => mark("claimed"));
@@ -463,7 +463,7 @@ function buildControl(r) {
     };
   const clearWinners = (back) => {
     const mine = locWinners(),
-      names = mine.filter((w) => w.st !== "absent").map((w) => w.name); // a winner who was not present never goes back
+      names = mine.map((w) => w.name); // every winner goes back, the ones who were not present too
     S.winners = S.winners.filter((w) => (w.loc || "cebu") !== rafLoc()); // this location's winners only
     S.raffle = null;
     if (back && names.length) {
