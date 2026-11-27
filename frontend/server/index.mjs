@@ -348,7 +348,7 @@ function keepAll(me, seg, old) {
   }
 }
 /** show-wide content from an Editor (ticker, awards, raffle list): only these keys, type-checked */
-const MEDALS = ["", "gold", "silver", "bronze"];
+const MEDALS = ["", "gold", "silver", "bronze", "ru1", "ru2"];
 function cleanShared(x) {
   const o = {};
   for (const k of ["ticker", "prize", "defBg", "rafMusic", "rafName"]) if (typeof x[k] === "string") o[k] = str(x[k], 2000);

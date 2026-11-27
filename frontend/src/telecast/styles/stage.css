@@ -659,6 +659,17 @@ body.live .stage {
   --m2: #d0843f;
   --m3: #6e3a12;
 }
+/* 1st / 2nd runner-up: royal blue and ruby ribbons */
+.ac.m-ru1 {
+  --m1: #dbeafe;
+  --m2: #3b82f6;
+  --m3: #1e3a8a;
+}
+.ac.m-ru2 {
+  --m1: #ffe4e6;
+  --m2: #e11d48;
+  --m3: #7f1d1d;
+}
 .medal {
   display: inline-flex;
   align-items: center;
