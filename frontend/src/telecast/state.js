@@ -94,6 +94,15 @@ const poolText = () => (S.pools && typeof S.pools[rafLoc()] === "string" ? S.poo
 const setPool = (t) => (S.pools = { ...(S.pools || {}), [rafLoc()]: t });
 const prizeText = () => (S.prizes && typeof S.prizes[rafLoc()] === "string" ? S.prizes[rafLoc()] : "");
 const setPrize = (t) => (S.prizes = { ...(S.prizes || {}), [rafLoc()]: t });
+/** the prizes still to be drawn at this location, in order (kept as one prize per line) */
+const prizeQ = () =>
+  String((S.prizeQ && S.prizeQ[rafLoc()]) || "")
+    .split("\n")
+    .map((x) => x.trim())
+    .filter(Boolean);
+const setPrizeQ = (a) => (S.prizeQ = { ...(S.prizeQ || {}), [rafLoc()]: a.join("\n") });
+/** the prize the next spin is for: the first in the list (or an older typed prize) */
+const nextPrize = () => prizeQ()[0] || prizeText().trim();
 /** winners of this computer's raffle location (older winners without a location count as Cebu) */
 const locWinners = () => (S.winners || []).filter((w) => (w.loc || "cebu") === rafLoc());
-export { S, fixSegs, dedupe, cleanList, MAXN, segYt, ytOn, awTitle, rafLoc, poolText, setPool, prizeText, setPrize, locWinners };
+export { S, fixSegs, dedupe, cleanList, MAXN, segYt, ytOn, awTitle, rafLoc, poolText, setPool, prizeText, setPrize, locWinners, prizeQ, setPrizeQ, nextPrize };

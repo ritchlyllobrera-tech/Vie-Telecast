@@ -377,9 +377,14 @@ function cleanShared(x) {
     o.winners = x.winners
       .filter(isObj)
       .slice(0, 3000)
-      .map((w) => ({ name: str(w.name, 200), prize: str(w.prize, 500), ...(typeof w.loc === "string" && /^[a-z]{1,20}$/.test(w.loc) ? { loc: w.loc } : {}) }));
+      .map((w) => ({
+        name: str(w.name, 200),
+        prize: str(w.prize, 500),
+        ...(typeof w.loc === "string" && /^[a-z]{1,20}$/.test(w.loc) ? { loc: w.loc } : {}),
+        ...(w.st === "claimed" || w.st === "absent" ? { st: w.st } : {}), // prize given / winner not present
+      }));
   // raffle names and prize per location
-  for (const [key, max] of [["pools", 500000], ["prizes", 2000]])
+  for (const [key, max] of [["pools", 500000], ["prizes", 2000], ["prizeQ", 50000]])
     if (isObj(x[key])) {
       o[key] = {};
       for (const [k, v] of Object.entries(x[key]).slice(0, 50)) if (/^[a-z]{1,20}$/.test(k) && typeof v === "string") o[key][k] = v.slice(0, max);
@@ -526,7 +531,7 @@ wss.on("connection", (ws, req) => {
         const c = cleanShared(m.S);
         // raffle: an Editor only changes their own location's names, prize and winners (two sites can't overwrite each other)
         if (me.loc) {
-          for (const k of ["pools", "prizes"])
+          for (const k of ["pools", "prizes", "prizeQ"])
             if (c[k]) c[k] = { ...(isObj(S[k]) ? S[k] : {}), ...(typeof c[k][me.loc] === "string" ? { [me.loc]: c[k][me.loc] } : {}) };
           if (c.winners) {
             const mine = (w) => (w.loc || "cebu") === me.loc;
@@ -544,7 +549,7 @@ wss.on("connection", (ws, req) => {
           // only the keys the Director changed: the ticker / awards / raffle names an Editor sent meanwhile stay
           const P = m.S,
             next = { ...S, ...P, segs: S.segs, lib: S.lib };
-          for (const k of ["pools", "prizes"]) if (isObj(P[k])) next[k] = { ...(isObj(S[k]) ? S[k] : {}), ...P[k] };
+          for (const k of ["pools", "prizes", "prizeQ"]) if (isObj(P[k])) next[k] = { ...(isObj(S[k]) ? S[k] : {}), ...P[k] };
           if (Array.isArray(P.winners)) {
             const locs = Array.isArray(P.winnersLocs) ? P.winnersLocs : null;
             next.winners = locs

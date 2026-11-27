@@ -1689,3 +1689,54 @@ body[data-panel="set"] #drawer .dpanel[data-p="set"] {
   color: var(--warn, #b45309);
   font-weight: 600;
 }
+/* raffle prizes and winners */
+#pzl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 8px;
+}
+.pzr {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.pzr.nx {
+  border-color: var(--acc);
+}
+#wcur {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 8px 10px;
+  border: 2px solid var(--acc);
+  border-radius: 12px;
+}
+#wcur[hidden],
+#qclaim[hidden],
+#qabs[hidden] {
+  display: none !important;
+}
+.wrow {
+  gap: 6px;
+}
+.wrow.gone .g b {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.wst {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.wst.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.wst.no {
+  background: #fee2e2;
+  color: #991b1b;
+}

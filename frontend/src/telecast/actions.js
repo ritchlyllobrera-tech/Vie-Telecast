@@ -1,5 +1,5 @@
 /** Show actions: go to a segment, send a playback command, spin the raffle. */
-import { S, dedupe, segYt, rafLoc, poolText, setPool, prizeText, locWinners } from "./state.js";
+import { S, dedupe, segYt, rafLoc, poolText, setPool, prizeText, setPrize, locWinners, prizeQ, setPrizeQ } from "./state.js";
 import { save } from "./sync.js";
 import { startRaf, rafOn } from "./playback.js";
 import { now } from "./clock.js";
@@ -117,7 +117,8 @@ function spin() {
     return;
   }
   const w = n[Math.floor(Math.random() * n.length)];
-  const pz = prizeText().trim(),
+  const Q = prizeQ(),
+    pz = Q[0] || prizeText().trim(),
     dur = +S.spinSec || [10, 15, 20, 25, 30][Math.floor(Math.random() * 5)];
   S.winners.push({ name: w, prize: pz, loc: rafLoc() });
   S.raffle = { names: n, winner: w, spinId: now(), prize: pz, round: locWinners().length, dur, loc: rafLoc() };
@@ -125,6 +126,19 @@ function spin() {
   S.yt = null;
   if (!rafOn()) startRaf();
   setPool(n.filter((x) => x !== w).join("\n"));
+  if (Q.length) setPrizeQ(Q.slice(1)); // this prize is now being drawn
+  else if (pz) setPrize("");
+  save();
+}
+/**
+ * Lock what happened to winner `w` (an entry of S.winners): "claimed" = present, prize given;
+ * "absent" = not present: the name stays in the winners history (and out of the names list), the prize goes back
+ * to the top of the prize list for the next spin.
+ */
+function markWinner(w, st) {
+  if (!w || w.st) return;
+  w.st = st;
+  if (st === "absent" && w.prize) setPrizeQ([w.prize, ...prizeQ()]);
   save();
 }
 
@@ -172,4 +186,4 @@ const stopSfx = () => {
   save();
 };
 
-export { setSeg, cmd, setAll, endBc, playYt, stopYt, spin, playSfx, stopSfx, pauseShow, resumeShow, restartShow, holdOnOpen };
+export { setSeg, cmd, setAll, endBc, playYt, stopYt, spin, markWinner, playSfx, stopSfx, pauseShow, resumeShow, restartShow, holdOnOpen };

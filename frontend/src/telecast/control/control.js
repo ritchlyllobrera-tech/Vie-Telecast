@@ -1,14 +1,14 @@
 /** Control-room page: header, cards, bindings and per-render refresh. */
 import { exportBackup, importBackup } from "../persistence.js";
 import { $, esc, SCENES, MB, LOCS, meetLink, meetPlat } from "../constants.js";
-import { S, dedupe, cleanList, MAXN, segLeft, segYt, ytOn, rafLoc, poolText, setPool, prizeText, setPrize, locWinners } from "../state.js";
+import { S, dedupe, cleanList, MAXN, segLeft, segYt, ytOn, rafLoc, poolText, setPool, prizeText, setPrize, locWinners, prizeQ, setPrizeQ, nextPrize } from "../state.js";
 import { LIVE, ownOut, quiet, save, popOut, doAct } from "../sync.js";
 import { storeFile, mediaButton } from "../media.js";
 import { NET, canControl, renderNet, myLoc, segList } from "../net.js";
 import { startCall, stopCall, sharing, viewers, callLive, canShare } from "../call.js";
 import { vidPlaying, startRaf } from "../playback.js";
 import { buildStage, updateStage } from "../stage/stage.js";
-import { setSeg, cmd, playYt, stopYt, endBc, spin, stopSfx, pauseShow, resumeShow, restartShow } from "../actions.js";
+import { setSeg, cmd, playYt, stopYt, endBc, spin, markWinner, stopSfx, pauseShow, resumeShow, restartShow } from "../actions.js";
 import { renderRundown } from "./rundown.js";
 import { openBulk, refreshBulk } from "./bulk.js";
 import { now } from "../clock.js";
@@ -120,7 +120,7 @@ let rst = 0;
 function buildControl(r) {
   r.innerHTML = `<div class="aur"></div><header id="top"><button id="sidet" title="Show the rundown" aria-label="Show the rundown">☰ Rundown</button><div class="brand"><span class="bmark">🎄</span><div><h1>VIENOVO TELECAST</h1><small>Control room · Year End &amp; Christmas 2026</small></div></div><span id="net" class="row"></span><div class="showctl"><button class="p" id="go"></button><button id="rst" title="Start again from segment 1">⏮ Restart</button><span id="shst"></span></div><span class="sp"></span><b id="clk" class="tm"></b><span class="live-dot"></span><span class="mut" id="sv">✔ Auto-saved</span><button class="p" id="pop">Pop-out Live Screen ↗</button><button id="fs" title="Fullscreen preview of the monitor">⛶<span class="lbl"> Fullscreen</span></button></header>
  <aside id="side" aria-label="Rundown"><div class="shead"><h2 title="✎ edits a segment · ▶ takes it live · ✔ Finish &amp; next skips ahead when a segment ends early (or press the → key). With Auto-Pilot, a segment starts at its set clock time. 1 min 30 s before a segment ends you get a warning; when its time is up it asks you (or moves on by itself, if set in the Segment editor).">Rundown</h2><button id="sidec" title="Hide / show the segment list" aria-label="Hide or show the segment list">«</button></div><div id="rd"></div><div class="sfoot"><button id="pv">◀ Prev</button><button class="p g" id="nx" title="Finished early? Go straight to the next segment (shortcut: → key)">✔ Finish &amp; next ▶</button><button id="bulkb" title="Add, replace or remove the same music, videos or photos in many segments (e.g. all three locations) at once">🔁 Bulk media</button></div></aside>
- <main id="center"><section id="mon"><div class="monh"><h2 id="montl">Live program monitor</h2><span class="mut" id="np"></span></div><div id="callbar" class="row callbar"></div><div id="prevwrap"><div id="prev"></div></div><div class="below"><div class="row scn"><span id="scenes"></span></div><div class="row tmr"><span id="rem"></span></div><div id="nxb" class="row"><b></b><button class="p" id="nxnow">Start now</button><button id="nxhold">Hold</button></div><div id="quick" class="row" hidden><span id="qwheel" class="row" hidden><input id="qprize" placeholder="🎁 Prize for this spin"><button class="p" id="qspin">🎡 Spin</button><button id="qnext">✔ Next round</button></span><span id="qaw" class="row" hidden><button class="p" id="qanx">⏭ Next award</button></span><div id="qfold" hidden></div></div></div></section></main>
+ <main id="center"><section id="mon"><div class="monh"><h2 id="montl">Live program monitor</h2><span class="mut" id="np"></span></div><div id="callbar" class="row callbar"></div><div id="prevwrap"><div id="prev"></div></div><div class="below"><div class="row scn"><span id="scenes"></span></div><div class="row tmr"><span id="rem"></span></div><div id="nxb" class="row"><b></b><button class="p" id="nxnow">Start now</button><button id="nxhold">Hold</button></div><div id="quick" class="row" hidden><span id="qwheel" class="row" hidden><input id="qprize" placeholder="🎁 Add a prize (Enter)"><span id="qpz" class="mut"></span><button class="p" id="qspin">🎡 Spin</button><button id="qnext">✔ Next round</button><button class="p" id="qclaim" hidden>✔ Claimed</button><button class="d" id="qabs" hidden>✗ Not present</button></span><span id="qaw" class="row" hidden><button class="p" id="qanx">⏭ Next award</button></span><div id="qfold" hidden></div></div></div></section></main>
  <nav id="rail" aria-label="Tools"><button data-panel="lib" title="Media library"><i>🎞</i><span>Media</span><em class="bdg" id="bg-lib"></em></button><button data-panel="sfx" title="Sound effects"><i>🔊</i><span>Effects</span></button><button data-panel="tk" title="Ticker &amp; default live background"><i>📰</i><span>Ticker</span></button><button data-panel="aw" title="Employee awards"><i>🏅</i><span>Awards</span><em class="bdg" id="bg-aw"></em></button><button data-panel="raf" title="Grand raffle"><i>🎡</i><span>Raffle</span><em class="bdg" id="bg-raf"></em></button><button data-panel="ed" title="Segment editor"><i>✎</i><span>Segment</span></button><span class="sp"></span><button data-panel="set" title="Show settings, snow, backup"><i>⚙</i><span>Settings</span></button></nav>
  <aside id="drawer" aria-labelledby="dtitle"><div class="dhead"><b id="dtitle">Segment settings</b><button id="dclose" title="Close (Esc)" aria-label="Close">✕</button></div><div class="dbody">
  <section class="dpanel" data-p="lib"><div id="upst" class="mut" style="display:none;padding:6px 8px;border:1px dashed var(--acc);border-radius:10px;margin-bottom:8px"></div><div id="lib"></div></section>
@@ -129,7 +129,7 @@ function buildControl(r) {
  <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty 10 years)" maxlength="120" style="flex-basis:100%"></div><div class="row"><input class="g" id="aft" placeholder="🏆 Award shown on screen (e.g. 10 Years of Service)" maxlength="120" style="flex-basis:100%"></div><div class="row"><select class="g" id="afl" aria-label="Location of the folder"></select><button id="afadd">＋ Create folder</button></div><div class="mut">The folder name is for this list only; the Live Screen shows the award. A folder set to one location is only shown to that location's Editor. Drag ⠿ to change the order.</div>
  <h2 style="margin-top:10px">👤 Awardee</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><select class="g" id="aa" title="Folder the employee goes into"></select><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
  <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div class="row" id="afvr" hidden><label class="mut g">👁 Show folders for <select id="afv" style="width:100%" title="Only changes what this computer lists; the folders themselves and the other locations are not affected"></select></label></div><div id="al"></div></section>
- <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="b p" title="A .txt or .csv file, one participant per line (from Excel: File → Save As → CSV)">📤 Upload final list<input type="file" hidden accept=".txt,.csv,text/plain,text/csv" id="rup"></label><span class="mut g" id="rupm"></span></div><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line (up to 250 per location)"></textarea><div class="mut" id="pmsg" role="status"></div><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button><div class="row wclrq" id="wclrq" hidden><span class="g mut">Clear the winners. Put their names back in the names list?</span><button class="p" id="wback">↩ Clear &amp; put names back</button><button class="d" id="wonly">🗑 Clear only</button><button id="wno">Cancel</button></div></section>
+ <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="b p" title="A .txt or .csv file, one participant per line (from Excel: File → Save As → CSV)">📤 Upload final list<input type="file" hidden accept=".txt,.csv,text/plain,text/csv" id="rup"></label><span class="mut g" id="rupm"></span></div><h2 style="margin-top:6px">🎁 Prizes <span class="mut" id="pzc"></span></h2><div class="row"><input class="g" id="prize" placeholder="Type a prize, e.g. 55-inch 4K Smart TV" maxlength="300"><button class="p" id="pzadd">＋ Add</button></div><div class="mut">Each spin is for the first prize in the list.</div><div id="pzl"></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line (up to 250 per location)"></textarea><div class="mut" id="pmsg" role="status"></div><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div id="wcur" hidden></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button><div class="row wclrq" id="wclrq" hidden><span class="g mut">Clear the winners. Put their names back in the names list?</span><button class="p" id="wback">↩ Clear &amp; put names back</button><button class="d" id="wonly">🗑 Clear only</button><button id="wno">Cancel</button></div></section>
  <section class="dpanel" data-p="ed"><div id="ed"></div></section>
  <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> ⏰ Follow the schedule (each segment starts by itself at its set time). Leave off while testing.</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
  </div></aside><div id="dback"></div>
@@ -312,9 +312,47 @@ function buildControl(r) {
     S.raffle = null;
     save();
   });
-  $(r, "#qprize").oninput = (e) => {
-    setPrize(e.target.value);
-    quiet();
+  // prizes: ＋ Add (or Enter) puts the typed prize at the end of this location's list
+  const addPrize = (inp) => {
+    const t = inp.value.trim().replace(/\s+/g, " ");
+    if (!t) return inp.focus();
+    setPrizeQ([...prizeQ(), t]);
+    inp.value = "";
+    save();
+    inp.focus();
+  };
+  $(r, "#qprize").onkeydown = (e) => e.key === "Enter" && (e.preventDefault(), addPrize(e.target));
+  $(r, "#prize").onkeydown = (e) => e.key === "Enter" && (e.preventDefault(), addPrize(e.target));
+  B("#pzadd", () => addPrize($(r, "#prize")));
+  $(r, "#pzl").onclick = (e) => {
+    const b = e.target.closest("[data-pzx],[data-pzu]");
+    if (!b) return;
+    const Q = prizeQ();
+    if (b.dataset.pzx != null) Q.splice(+b.dataset.pzx, 1);
+    else {
+      const i = +b.dataset.pzu;
+      if (i > 0) [Q[i - 1], Q[i]] = [Q[i], Q[i - 1]];
+    }
+    setPrizeQ(Q);
+    save();
+  };
+  // winners: lock "claimed" (present, prize given) or "not present" (name kept in the history, prize back in the draw)
+  const curWin = () => locWinners().at(-1);
+  const mark = (st, w) => {
+    w = w || curWin();
+    if (!w || w.st) return;
+    if (st === "absent" && !confirm(`${w.name} is not present?\nThe name stays in the winners history and does not go back to the names list.${w.prize ? `\n"${w.prize}" goes back to the top of the prize list for the next spin.` : ""}`)) return;
+    markWinner(w, st);
+  };
+  B("#qclaim", () => mark("claimed"));
+  B("#qabs", () => mark("absent"));
+  $(r, "#wcur").onclick = (e) => {
+    const b = e.target.closest("[data-wst]");
+    if (b) mark(b.dataset.wst);
+  };
+  $(r, "#wl").onclick = (e) => {
+    const b = e.target.closest("[data-wi]");
+    if (b) mark(b.dataset.wst, S.winners[+b.dataset.wi]);
   };
   $(r, "#rmu").onchange = async (e) => {
     const f = e.target.files[0];
@@ -334,10 +372,6 @@ function buildControl(r) {
     S.rafMusic = "";
     S.rafName = "";
     save();
-  };
-  $(r, "#prize").oninput = (e) => {
-    setPrize(e.target.value);
-    quiet();
   };
   // pasting (or leaving the box) cleans the list right away: repeats removed, at most MAXN names
   $(r, "#pool").onpaste = () => setTimeout(() => applyPool(r, $(r, "#pool").value), 0);
@@ -381,7 +415,7 @@ function buildControl(r) {
     };
   const clearWinners = (back) => {
     const mine = locWinners(),
-      names = mine.map((w) => w.name);
+      names = mine.filter((w) => w.st !== "absent").map((w) => w.name); // a winner who was not present never goes back
     S.winners = S.winners.filter((w) => (w.loc || "cebu") !== rafLoc()); // this location's winners only
     S.raffle = null;
     if (back && names.length) {
@@ -531,8 +565,11 @@ function renderControl(r) {
   $(r, "#auto").checked = !!S.autoTime;
   $(r, "#msnd").checked = !!S.monSound;
   {
-    const q = $(r, "#qprize");
-    if (q && document.activeElement !== q) q.value = prizeText();
+    const np = nextPrize(),
+      w = locWinners().at(-1),
+      open = !!(w && !w.st && S.raffle && S.raffle.winner === w.name);
+    setTx($(r, "#qpz"), np ? "Next: " + np : "No prize in the list");
+    $(r, "#qclaim").hidden = $(r, "#qabs").hidden = !open;
   }
   {
     const n = $(r, "#rmn");
@@ -567,14 +604,49 @@ function renderControl(r) {
   renderAwards(r);
   rafLocUi(r);
   if (document.activeElement !== $(r, "#pool")) $(r, "#pool").value = poolText();
-  if (document.activeElement !== $(r, "#prize")) $(r, "#prize").value = prizeText();
+  {
+    // prize list of this location
+    const Q = prizeQ(),
+      H =
+        Q.map(
+          (p, i) =>
+            `<div class="row pzr${i ? "" : " nx"}"><span class="g"><b>${i + 1}.</b> ${esc(p)}${i ? "" : ' <span class="onair">NEXT SPIN</span>'}</span><button data-pzu="${i}" ${i ? "" : "disabled"} title="Move up" aria-label="Move ${esc(p)} up">↑</button><button class="d xs" data-pzx="${i}" title="Remove this prize" aria-label="Remove ${esc(p)}">✕</button></div>`,
+        ).join("") ||
+        (prizeText().trim()
+          ? `<div class="mut">Next spin: ${esc(prizeText().trim())}</div>`
+          : `<div class="mut">No prizes yet at ${esc(LOCS[rafLoc()])}. Type one above and press ＋ Add.</div>`),
+      pl = $(r, "#pzl");
+    if (pl._h !== H) {
+      pl._h = H;
+      pl.innerHTML = H;
+    }
+    setTx($(r, "#pzc"), Q.length ? `${Q.length} to draw at ${LOCS[rafLoc()]}` : "");
+    // the winner just drawn: claimed or not present
+    const w = locWinners().at(-1),
+      wc = $(r, "#wcur"),
+      WH =
+        w && !w.st
+          ? `<b>🎉 ${esc(w.name)}</b>${w.prize ? ` <span class="mut">won ${esc(w.prize)}</span>` : ""}<span class="row"><button class="p" data-wst="claimed" title="The winner is here and got the prize: lock it">✔ Claimed (present)</button><button class="d" data-wst="absent" title="The winner is not here: the prize goes back to the top of the list">✗ Not present</button></span>`
+          : "";
+    wc.hidden = !WH;
+    if (wc._h !== WH) {
+      wc._h = WH;
+      wc.innerHTML = WH;
+    }
+  }
   $(r, "#pc").textContent = poolCount();
   $(r, "#wl").innerHTML =
     locWinners()
-      .map(
-        (w, i) =>
-          `<div>${i + 1}. 🏆 ${esc(w.name)}${w.prize ? ` <span class="mut">· ${esc(w.prize)}</span>` : ""}</div>`,
-      )
+      .map((w, i) => {
+        const at = S.winners.indexOf(w),
+          tag =
+            w.st === "claimed"
+              ? '<span class="wst ok" title="Prize given">🔒 Claimed</span>'
+              : w.st === "absent"
+                ? '<span class="wst no" title="Not present: no prize, not back in the names list">✗ Not present</span>'
+                : `<button class="xs p" data-wi="${at}" data-wst="claimed" title="Present: prize given">✔ Claimed</button><button class="xs d" data-wi="${at}" data-wst="absent" title="Not present: the prize goes back to the top of the list">✗ Not present</button>`;
+        return `<div class="row wrow${w.st === "absent" ? " gone" : ""}"><span class="g">${i + 1}. ${w.st === "absent" ? "🚫" : "🏆"} <b>${esc(w.name)}</b>${w.prize ? ` <span class="mut">· ${esc(w.prize)}${w.st === "absent" ? " (back in the draw)" : ""}</span>` : ""}</span>${tag}</div>`;
+      })
       .join("") || `<div class="mut">No winners yet at ${esc(LOCS[rafLoc()])}.</div>`;
 }
 
@@ -644,6 +716,11 @@ function rafLocUi(r) {
     setPrize(S.prize || "");
     S.pool = "";
     S.prize = "";
+    save();
+  }
+  if (prizeText().trim() && !prizeQ().length && !(S.raffle && now() - S.raffle.spinId < 60000)) {
+    setPrizeQ([prizeText().trim()]);
+    setPrize("");
     save();
   }
   const sel = $(r, "#rloc"),

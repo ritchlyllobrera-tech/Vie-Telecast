@@ -51,7 +51,8 @@ const DEF = {
   awLoc: {}, // folder name -> location key (cebu / ncr / cdo); not set = all locations
   pool: "",
   pools: {}, // raffle names per location: { cebu: "…", ncr: "…", cdo: "…" }
-  prizes: {}, // prize for the next spin, per location
+  prizes: {},
+  prizeQ: {}, // prizes still to be drawn, per location: { cebu: "Prize 1\nPrize 2", … } // prize for the next spin, per location
   rafLoc: "", // the location this computer's raffle runs for (an Editor: their own)
   winners: [],
   spot: -1,

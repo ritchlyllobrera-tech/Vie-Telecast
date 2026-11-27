@@ -31,7 +31,7 @@ const LOCAL = ["edit", "monSound", "monVid", "sfx", "sfxVol"];
 // only the Director's copy is the program that the Live screens show.
 const PLAY = ["yt", "ytStop", "cmd", "running", "started", "seg", "segStart", "pausedLeft", "t0", "hold", "auto", "autoTime", "scene", "bgId", "spot", "spotTs", "spotList", "shuf", "raffle", "rafLoc", "snow", "sfx", "sfxVol"];
 // show-wide content an Editor may change too (the Director sends it with the rest of the show)
-const SHARED = ["ticker", "defBg", "awards", "awFolders", "awTitle", "awLoc", "pool", "pools", "winners", "prize", "prizes", "rafMusic", "rafName"];
+const SHARED = ["ticker", "defBg", "awards", "awFolders", "awTitle", "awLoc", "pool", "pools", "winners", "prize", "prizes", "prizeQ", "rafMusic", "rafName"];
 const pickShared = (o) => Object.fromEntries(SHARED.filter((k) => k in o).map((k) => [k, o[k]]));
 const ROLE = { director: "🎬 Director", editor: "✏ Editor", screen: "📺 Live screen" };
 
@@ -229,7 +229,7 @@ function applyRemote(R, full) {
     edId = (S.segs[S.edit] || {}).id;
   // an Editor's own location's raffle names / prize: a server copy that doesn't have them (yet) never wipes them
   if (ownSeg && myLoc())
-    for (const k of ["pools", "prizes"]) {
+    for (const k of ["pools", "prizes", "prizeQ"]) {
       const mine = S[k] && S[k][myLoc()];
       if (typeof mine === "string" && mine && !(R[k] && typeof R[k][myLoc()] === "string")) R = { ...R, [k]: { ...(R[k] || {}), [myLoc()]: mine } };
     }
@@ -249,7 +249,7 @@ function applyRemote(R, full) {
 }
 
 /** keys raffle data is kept per location in: only the locations that changed are sent */
-const PER_LOC = ["pools", "prizes"];
+const PER_LOC = ["pools", "prizes", "prizeQ"];
 /** the Director's show update: changed keys only; raffle names / prizes / winners only for the locations that changed */
 function showPatch(now, prev) {
   const P = {},
