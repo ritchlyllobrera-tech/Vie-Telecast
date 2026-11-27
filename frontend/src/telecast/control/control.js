@@ -129,7 +129,7 @@ function buildControl(r) {
  <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty 10 years)" maxlength="120" style="flex-basis:100%"></div><div class="row"><input class="g" id="aft" placeholder="🏆 Award shown on screen (e.g. 10 Years of Service)" maxlength="120" style="flex-basis:100%"></div><div class="row"><select class="g" id="afl" aria-label="Location of the folder"></select><button id="afadd">＋ Create folder</button></div><div class="mut">The folder name is for this list only; the Live Screen shows the award. A folder set to one location is only shown to that location's Editor. Drag ⠿ to change the order.</div>
  <h2 style="margin-top:10px">👤 Awardee</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><select class="g" id="aa" title="Folder the employee goes into"></select><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
  <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div class="row" id="afvr" hidden><label class="mut g">👁 Show folders for <select id="afv" style="width:100%" title="Only changes what this computer lists; the folders themselves and the other locations are not affected"></select></label></div><div id="al"></div></section>
- <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button><div class="row wclrq" id="wclrq" hidden><span class="g mut">Clear the winners. Put their names back in the names list?</span><button class="p" id="wback">↩ Clear &amp; put names back</button><button class="d" id="wonly">🗑 Clear only</button><button id="wno">Cancel</button></div></section>
+ <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="b p" title="A .txt or .csv file, one participant per line (from Excel: File → Save As → CSV)">📤 Upload final list<input type="file" hidden accept=".txt,.csv,text/plain,text/csv" id="rup"></label><span class="mut g" id="rupm"></span></div><div class="row"><label class="mut g">🎁 Prize for this spin <input id="prize" style="width:100%" placeholder="Type the prize, e.g. Grand Prize: 55-inch 4K Smart TV"></label></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line"></textarea><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button><div class="row wclrq" id="wclrq" hidden><span class="g mut">Clear the winners. Put their names back in the names list?</span><button class="p" id="wback">↩ Clear &amp; put names back</button><button class="d" id="wonly">🗑 Clear only</button><button id="wno">Cancel</button></div></section>
  <section class="dpanel" data-p="ed"><div id="ed"></div></section>
  <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> ⏰ Follow the schedule (each segment starts by itself at its set time). Leave off while testing.</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
  </div></aside><div id="dback"></div>
@@ -350,6 +350,34 @@ function buildControl(r) {
     rafLocUi(r); // and the name count in the location picker
     updateStage($(r, "#prev"), ownOut());
   };
+  // Upload the final list of participants into the names list of the location picked above
+  $(r, "#rup").onchange = async (e) => {
+    const f = e.target.files[0],
+      msg = $(r, "#rupm");
+    e.target.value = "";
+    if (!f) return;
+    let names;
+    try {
+      names = listNames(await f.text(), /\.csv$/i.test(f.name));
+    } catch {
+      names = [];
+    }
+    const where = LOCS[rafLoc()];
+    if (!names.length) {
+      msg.textContent = `⚠ No names found in ${f.name}. Use a .txt or .csv file with one name per line.`;
+      return;
+    }
+    const had = dedupe(poolText()).length;
+    if (had && !confirm(`Replace the ${had} names in the ${where} list with the ${names.length} names from "${f.name}"?`)) return;
+    setPool(names.join("\n"));
+    save();
+    msg.textContent = `✔ ${names.length} names from ${f.name} are now the ${where} list.`;
+    $(r, "#pool").value = poolText();
+    $(r, "#pc").textContent = dedupe(poolText()).length + " in pool";
+    badges(r);
+    rafLocUi(r);
+    updateStage($(r, "#prev"), ownOut());
+  };
   // Clear winners: asks whether the winners' names go back into this location's names list
   const wq = $(r, "#wclrq"),
     wAsk = (on) => {
@@ -568,6 +596,22 @@ function badges(r) {
   bd("#bg-raf", dedupe(poolText()).length);
 }
 
+/** names from an uploaded list: one per line; for a .csv the first column (quotes handled), skipping a "Name" header */
+function listNames(text, csv) {
+  const cell = (line) => {
+    if (!csv) return line;
+    const m = line.match(/^\s*"((?:[^"]|"")*)"/);
+    return m ? m[1].replace(/""/g, '"') : line.split(/[,;\t]/)[0];
+  };
+  const out = String(text)
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .map((l) => cell(l).trim())
+    .filter(Boolean);
+  if (out.length && /^(full\s*)?names?$|^participants?$|^employees?$/i.test(out[0])) out.shift();
+  return dedupe(out.join("\n"));
+}
+
 /** Grand raffle location: the Director picks which location's names list to paste and spin;
  * an Editor always works on their own location's list. Older single lists move to this location once. */
 function rafLocUi(r) {
@@ -590,8 +634,8 @@ function rafLocUi(r) {
     sel.innerHTML = H;
     sel.disabled = ed;
     $(r, "#rloch").textContent = ed
-      ? "You paste and spin the names for your own location."
-      : "Pick a location, then paste its names. Each location keeps its own names, prize and winners.";
+      ? "You upload or paste, and spin, the names for your own location."
+      : "Pick a location, then upload or paste its final list. Each location keeps its own names, prize and winners.";
   }
   sel.onchange = () => {
     S.rafLoc = sel.value;
