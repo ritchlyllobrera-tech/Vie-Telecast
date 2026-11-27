@@ -321,8 +321,15 @@ function buildControl(r) {
     save();
     inp.focus();
   };
-  $(r, "#qprize").onkeydown = (e) => e.key === "Enter" && (e.preventDefault(), addPrize(e.target));
-  $(r, "#prize").onkeydown = (e) => e.key === "Enter" && (e.preventDefault(), addPrize(e.target));
+  // (a handler that returns false would block typing, so these return nothing)
+  const onEnter = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addPrize(e.target);
+    }
+  };
+  $(r, "#qprize").onkeydown = onEnter;
+  $(r, "#prize").onkeydown = onEnter;
   B("#pzadd", () => addPrize($(r, "#prize")));
   $(r, "#pzl").onclick = (e) => {
     const b = e.target.closest("[data-pzx],[data-pzu]");
