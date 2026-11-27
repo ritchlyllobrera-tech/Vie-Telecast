@@ -535,9 +535,8 @@ function updateStage(el, own) {
         FE +
         '<i class="fg"></i><button class="xb" data-a="closeAward">\u2715 Close</button>' +
         (md ? '<div class="medal"><span>' + MEDAL[md][0] + "</span>" + MEDAL[md][1] + "</div>" : "") +
-        '<div class="at">' +
-        esc(awTitle(a.award || "Award")) +
-        '</div><div class="an" style="font-size:' +
+        // the award itself is not written on the card: it is already in the background photo
+        '<div class="an" style="font-size:' +
         fs +
         'cqw">' +
         a.name
