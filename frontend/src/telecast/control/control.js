@@ -129,7 +129,7 @@ function buildControl(r) {
  <section class="dpanel" data-p="aw"><h2>📁 Folder</h2><div class="row"><input class="g" id="afn" placeholder="Folder name (e.g. Loyalty 10 years)" maxlength="120" style="flex-basis:100%"></div><div class="row"><input class="g" id="aft" placeholder="🏆 Award shown on screen (e.g. 10 Years of Service)" maxlength="120" style="flex-basis:100%"></div><div class="row"><select class="g" id="afl" aria-label="Location of the folder"></select><button id="afadd">＋ Create folder</button></div><div class="mut">The folder name is for this list only; the Live Screen shows the award. A folder set to one location is only shown to that location's Editor. Drag ⠿ to change the order.</div>
  <h2 style="margin-top:10px">👤 Awardee</h2><div class="row"><input class="g" id="an" placeholder="Employee name" style="flex-basis:100%"></div><div class="row"><select class="g" id="aa" title="Folder the employee goes into"></select><select id="amed" title="Medal for this awardee (optional)">${medalOpts("")}</select><button class="p" id="aadd">Add</button></div>
  <div class="row"><button class="p" id="anx">⏭ Next award</button><button id="aoff">Hide spotlight</button><button class="d" id="aclr">Clear all</button></div><div class="row" id="afvr" hidden><label class="mut g">👁 Show folders for <select id="afv" style="width:100%" title="Only changes what this computer lists; the folders themselves and the other locations are not affected"></select></label></div><div id="al"></div></section>
- <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="b p" title="A .txt or .csv file, one participant per line (from Excel: File → Save As → CSV)">📤 Upload final list<input type="file" hidden accept=".txt,.csv,text/plain,text/csv" id="rup"></label><span class="mut g" id="rupm"></span></div><h2 style="margin-top:6px">🎁 Prizes <span class="mut" id="pzc"></span></h2><div class="row"><input class="g" id="prize" placeholder="Type a prize, e.g. 55-inch 4K Smart TV" maxlength="300"><button class="p" id="pzadd">＋ Add</button></div><div class="mut">Each spin is for the first prize in the list.</div><div id="pzl"></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line (up to 250 per location)"></textarea><div class="mut" id="pmsg" role="status"></div><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div id="wcur" hidden></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button><div class="row wclrq" id="wclrq" hidden><span class="g mut">Clear the winners. Put their names back in the names list?</span><button class="p" id="wback">↩ Clear &amp; put names back</button><button class="d" id="wonly">🗑 Clear only</button><button id="wno">Cancel</button></div></section>
+ <section class="dpanel" data-p="raf"><div class="row"><label class="mut g">📍 Names list for <select id="rloc" style="width:100%"></select></label></div><div class="mut" id="rloch"></div><div class="row"><label class="b p" title="A .txt or .csv file, one participant per line (from Excel: File → Save As → CSV)">📤 Upload final list<input type="file" hidden accept=".txt,.csv,text/plain,text/csv" id="rup"></label><span class="mut g" id="rupm"></span></div><h2 style="margin-top:6px">🎁 Prizes</h2><div class="row"><label class="mut g">📍 Prizes for <select id="pzloc" style="width:100%"></select></label></div><div class="mut" id="pzc"></div><div class="row"><input class="g" id="prize" placeholder="Type a prize, e.g. 55-inch 4K Smart TV" maxlength="300"><button class="p" id="pzadd">＋ Add</button></div><div class="mut">Each spin is for the first prize in the list.</div><div id="pzl"></div><div class="row"><label class="mut">⏱ Spin time <select id="dur"><option value="0">🎲 Random (10–30 s)</option><option value="10">10 s</option><option value="15">15 s</option><option value="20">20 s</option><option value="25">25 s</option><option value="30">30 s</option><option value="40">40 s</option><option value="60">60 s</option></select></label></div><textarea id="pool" placeholder="Paste participants, one per line (up to 250 per location)"></textarea><div class="mut" id="pmsg" role="status"></div><div class="row"><button id="psave">Remove duplicates</button><button class="p" id="spin">🎡 Spin</button><button id="wshow">👁 Show wheel on Live Screen</button><button id="whide">🙈 Hide wheel</button><button id="ack">✔ Acknowledge &amp; next round</button><span class="mut" id="pc"></span></div><div id="wcur" hidden></div><div class="row"><label class="b">🎵 Raffle music<input type="file" hidden accept="audio/*,video/mp4,.mp3,.m4a,.mp4" id="rmu"></label><span class="mut g" id="rmn"></span><button id="rmr">Reset to default</button></div><div id="wl"></div><button class="d" id="wclr">Clear winners</button><div class="row wclrq" id="wclrq" hidden><span class="g mut">Clear the winners. Put their names back in the names list?</span><button class="p" id="wback">↩ Clear &amp; put names back</button><button class="d" id="wonly">🗑 Clear only</button><button id="wno">Cancel</button></div></section>
  <section class="dpanel" data-p="ed"><div id="ed"></div></section>
  <section class="dpanel" data-p="set"><div class="row"><label class="mut">❄ <select id="snow"><option value="off">Snow off</option><option value="light">Light snow</option><option value="lightd">Light snow (no snowflakes)</option><option value="normal">Snowfall</option><option value="normald">Snowfall (no snowflakes)</option><option value="blizzard">Blizzard</option></select></label></div><div class="row"><label class="mut"><input type="checkbox" id="msnd"> 🔊 Sound on this screen too</label></div><div class="row"><label class="mut"><input type="checkbox" id="auto"> ⏰ Follow the schedule (each segment starts by itself at its set time). Leave off while testing.</label></div><div class="row"><button id="msave" title="Copies every video, song and picture of the show to this computer, so they play from its disk instead of over the network. Do it before the show.">⬇ Save media on this PC</button></div><div class="row dir"><button id="dlh" title="Saves your settings plus any pictures, music or videos uploaded in this browser">💾 Download backup</button><label class="b" title="Restore a backup file">📂 Restore backup<input type="file" hidden accept=".json,application/json" id="rbk"></label></div></section>
  </div></aside><div id="dback"></div>
@@ -331,9 +331,50 @@ function buildControl(r) {
   $(r, "#qprize").onkeydown = onEnter;
   $(r, "#prize").onkeydown = onEnter;
   B("#pzadd", () => addPrize($(r, "#prize")));
+  // edit a prize in place: ✎, then ✔ Save (Enter) or Cancel (Esc)
+  const pzSave = () => {
+    const inp = $(r, "#pzl [data-pzin]"),
+      Q = prizeQ();
+    if (!pzEd || !inp) return;
+    const t = inp.value.trim().replace(/\s+/g, " ");
+    if (t && Q[pzEd.i] === pzEd.orig) {
+      Q[pzEd.i] = t;
+      setPrizeQ(Q);
+    }
+    pzEd = null;
+    save();
+    renderControl(r);
+  };
+  const pzCancel = () => {
+    pzEd = null;
+    renderControl(r);
+  };
+  $(r, "#pzl").onkeydown = (e) => {
+    if (!e.target.dataset || e.target.dataset.pzin == null) return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      pzSave();
+    } else if (e.key === "Escape") pzCancel();
+  };
   $(r, "#pzl").onclick = (e) => {
+    const ed = e.target.closest("[data-pze],[data-pzok],[data-pzno]");
+    if (ed) {
+      if (ed.dataset.pze != null) {
+        const i = +ed.dataset.pze;
+        pzEd = { i, orig: prizeQ()[i] };
+        renderControl(r);
+        const inp = $(r, "#pzl [data-pzin]");
+        if (inp) {
+          inp.focus();
+          inp.setSelectionRange(inp.value.length, inp.value.length);
+        }
+      } else if (ed.dataset.pzok != null) pzSave();
+      else pzCancel();
+      return;
+    }
     const b = e.target.closest("[data-pzx],[data-pzu]");
     if (!b) return;
+    pzEd = null;
     const Q = prizeQ();
     if (b.dataset.pzx != null) Q.splice(+b.dataset.pzx, 1);
     else {
@@ -613,11 +654,13 @@ function renderControl(r) {
   if (document.activeElement !== $(r, "#pool")) $(r, "#pool").value = poolText();
   {
     // prize list of this location
-    const Q = prizeQ(),
-      H =
-        Q.map(
-          (p, i) =>
-            `<div class="row pzr${i ? "" : " nx"}"><span class="g"><b>${i + 1}.</b> ${esc(p)}${i ? "" : ' <span class="onair">NEXT SPIN</span>'}</span><button data-pzu="${i}" ${i ? "" : "disabled"} title="Move up" aria-label="Move ${esc(p)} up">↑</button><button class="d xs" data-pzx="${i}" title="Remove this prize" aria-label="Remove ${esc(p)}">✕</button></div>`,
+    const Q = prizeQ();
+    if (pzEd && Q[pzEd.i] !== pzEd.orig) pzEd = null; // the prize changed meanwhile (spun, removed, edited elsewhere)
+    const H =
+        Q.map((p, i) =>
+          pzEd && pzEd.i === i
+            ? `<div class="row pzr pzed${i ? "" : " nx"}"><b>${i + 1}.</b><input class="g" data-pzin="${i}" value="${esc(p)}" maxlength="300" aria-label="Prize ${i + 1}"><button class="p" data-pzok="${i}" title="Save (Enter)">✔ Save</button><button data-pzno="${i}" title="Cancel (Esc)">Cancel</button></div>`
+            : `<div class="row pzr${i ? "" : " nx"}"><span class="g"><b>${i + 1}.</b> ${esc(p)}${i ? "" : ' <span class="onair">NEXT SPIN</span>'}</span><button data-pze="${i}" title="Edit this prize" aria-label="Edit ${esc(p)}">✎</button><button data-pzu="${i}" ${i ? "" : "disabled"} title="Move up" aria-label="Move ${esc(p)} up">↑</button><button class="d xs" data-pzx="${i}" title="Remove this prize" aria-label="Remove ${esc(p)}">✕</button></div>`,
         ).join("") ||
         (prizeText().trim()
           ? `<div class="mut">Next spin: ${esc(prizeText().trim())}</div>`
@@ -627,7 +670,7 @@ function renderControl(r) {
       pl._h = H;
       pl.innerHTML = H;
     }
-    setTx($(r, "#pzc"), Q.length ? `${Q.length} to draw at ${LOCS[rafLoc()]}` : "");
+    setTx($(r, "#pzc"), Q.length ? `${Q.length} prize${Q.length > 1 ? "s" : ""} to draw at ${LOCS[rafLoc()]} only. Other locations keep their own list.` : "");
     // the winner just drawn: claimed or not present
     const w = locWinners().at(-1),
       wc = $(r, "#wcur"),
@@ -670,6 +713,8 @@ function badges(r) {
   bd("#bg-raf", dedupe(poolText()).length);
 }
 
+/** the prize being edited on this computer: { i: its place in the list, orig: its text when editing began } */
+let pzEd = null;
 /** "168 / 250 in pool" for this location */
 const poolCount = () => `${dedupe(poolText()).length} / ${MAXN} in pool`;
 /**
@@ -742,6 +787,22 @@ function rafLocUi(r) {
       ? "You upload or paste, and spin, the names for your own location."
       : "Pick a location, then upload or paste its final list. Each location keeps its own names, prize and winners.";
   }
+  // the prize list's own location picker: the same choice as the names list (names, prizes and winners go together)
+  const pzs = $(r, "#pzloc"),
+    nQ = (k) => String((S.prizeQ || {})[k] || "").split("\n").filter((x) => x.trim()).length,
+    PH = Object.entries(LOCS)
+      .map(([k, nm]) => `<option value="${k}" ${k === rafLoc() ? "selected" : ""}>📍 ${esc(nm)} (${nQ(k)} prize${nQ(k) === 1 ? "" : "s"})</option>`)
+      .join("");
+  if (pzs._h !== PH + ed) {
+    pzs._h = PH + ed;
+    pzs.innerHTML = PH;
+    pzs.disabled = ed;
+    pzs.title = ed ? "Your prizes belong to your location" : "Pick the location whose prizes you add and edit";
+  }
+  pzs.onchange = () => {
+    sel.value = pzs.value;
+    sel.onchange();
+  };
   sel.onchange = () => {
     S.rafLoc = sel.value;
     S.raffle = null;
