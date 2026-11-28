@@ -27,6 +27,7 @@ function extend(min) {
 }
 
 addEventListener("keydown", (e) => {
+  if (e.defaultPrevented) return; // a sound effect shortcut (or one being set) took this key
   if (LIVE || /INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName || "")) return;
   if (document.getElementById("login")) return;
   if (e.key === " ") {

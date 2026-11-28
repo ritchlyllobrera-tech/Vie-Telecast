@@ -6,7 +6,7 @@
 import BUNDLED from "../../data/mediaManifest.json";
 import { $, esc, MB } from "../constants.js";
 import { S } from "../state.js";
-import { save } from "../sync.js";
+import { save, LIVE } from "../sync.js";
 import { tx, url, uploadToLib } from "../media.js";
 import { playSfx } from "../actions.js";
 import { xon } from "./select.js";
@@ -196,16 +196,85 @@ export function renderLibrary(r) {
   );
 }
 
+/* ---------- keyboard shortcuts for sound effects ----------
+ * Each effect can get one key (kept on this computer only). Pressing it anywhere in the control room plays the effect,
+ * except while typing in a box. Space and the arrow keys stay the show's own shortcuts. */
+const FXK = "vtc_fx_keys";
+let fxKeys = {};
+try {
+  fxKeys = JSON.parse(localStorage.getItem(FXK) || "{}") || {};
+} catch {}
+const saveKeys = () => {
+  try {
+    localStorage.setItem(FXK, JSON.stringify(fxKeys));
+  } catch {}
+};
+/** the effect waiting for its key ("" = none) and the panel to redraw */
+let assigning = "",
+  fxRoot = null,
+  fxMsg = "";
+const RESERVED = [" ", "ARROWLEFT", "ARROWRIGHT", "ARROWUP", "ARROWDOWN", "ENTER", "TAB", "F5", "F11", "F12", "SHIFT", "CONTROL", "ALT", "META", "CAPSLOCK"];
+/** the name of a key as stored and shown: "A", "7", "F2", "/" */
+const keyName = (e) => (e.key.length === 1 ? e.key.toUpperCase() : e.key.toUpperCase());
+const keyLabel = (k) => (k === " " ? "Space" : k.length === 1 ? k : k.charAt(0) + k.slice(1).toLowerCase());
+const keyOf = (id) => Object.keys(fxKeys).find((k) => fxKeys[k] === id) || "";
+const typing = (t) => t && (/INPUT|TEXTAREA|SELECT/.test(t.tagName || "") || t.isContentEditable);
+// (LIVE is read when a key is pressed, not while the files load: sync.js and this file import each other)
+addEventListener(
+  "keydown",
+  (e) => {
+    if (LIVE || document.getElementById("login")) return;
+      if (assigning) {
+        // the key for the effect being set
+        e.preventDefault();
+        e.stopPropagation();
+        const id = assigning,
+          k = keyName(e),
+          m = libItem(id);
+        if (k === "ESCAPE") {
+          delete fxKeys[keyOf(id)];
+          fxMsg = m ? `Shortcut removed from "${bare(m.name)}".` : "";
+        } else if (RESERVED.includes(k) || e.ctrlKey || e.metaKey || e.altKey) {
+          fxMsg = `⚠ ${keyLabel(k)} can't be used (it is used by the show or the browser). Press ⌨ again and pick another key.`;
+        } else {
+          const was = fxKeys[k] && fxKeys[k] !== id ? libItem(fxKeys[k]) : null;
+          delete fxKeys[keyOf(id)];
+          fxKeys[k] = id;
+          fxMsg = `✔ ${keyLabel(k)} plays "${m ? bare(m.name) : "this effect"}".` + (was ? ` (taken from "${bare(was.name)}")` : "");
+        }
+        assigning = "";
+        saveKeys();
+        if (fxRoot) renderSfx(fxRoot);
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+      const id = fxKeys[keyName(e)];
+      if (!id || !libItem(id)) return;
+      e.preventDefault();
+      playSfx(id);
+      const b = fxRoot && fxRoot.querySelector(`[data-fx="${CSS.escape(id)}"]`);
+      if (b) {
+        b.classList.remove("hit");
+        void b.offsetWidth;
+        b.classList.add("hit");
+      }
+    },
+    true,
+  );
+
 export function renderSfx(r) {
+  fxRoot = r;
   const box = $(r, "#sfx"),
     fx = libItems("sfx");
   const H = fx.length
-    ? pickBar("sfx", fx, "sound effects") +
+    ? `<div class="mut fxkh">⌨ Keyboard shortcuts: press ⌨ on an effect, then the key you want (Esc removes it). The keys work anywhere in the control room, except while typing in a box. They are kept on this computer only.</div>` +
+      (fxMsg ? `<div class="fxkm">${esc(fxMsg)}</div>` : "") +
+      pickBar("sfx", fx, "sound effects") +
       fx
         .map((m) =>
           picking === "sfx"
             ? `<label class="sfxw pkrow${pick.has(m.id) ? " xon" : ""}">${tick("sfx", m.id)}<span class="sfxb">🔊 ${esc(bare(m.name))}</span></label>`
-            : `<span class="sfxw${xon("fx:" + m.id)}" data-sel="fx:${esc(m.id)}"><button class="sfxb" data-fx="${esc(m.id)}">🔊 ${esc(bare(m.name))}</button><button class="d sfxx xs" data-fxdel="${esc(m.id)}" title="Delete this sound effect">✕</button></span>`,
+            : `<span class="sfxw${xon("fx:" + m.id)}" data-sel="fx:${esc(m.id)}"><button class="sfxb" data-fx="${esc(m.id)}" title="${keyOf(m.id) ? "Shortcut: " + esc(keyLabel(keyOf(m.id))) : "No shortcut yet"}">🔊 ${esc(bare(m.name))}</button><button class="fxk xs${assigning === m.id ? " wait" : keyOf(m.id) ? " on" : ""}" data-fxk="${esc(m.id)}" title="${assigning === m.id ? "Press the key for this effect now (Esc = no shortcut)" : "Set a keyboard shortcut for this effect"}">${assigning === m.id ? "⌨ Press a key…" : keyOf(m.id) ? "⌨ " + esc(keyLabel(keyOf(m.id))) : "⌨ Set key"}</button><button class="d sfxx xs" data-fxdel="${esc(m.id)}" title="Delete this sound effect">✕</button></span>`,
         )
         .join("")
     : '<div class="mut">No sound effects yet. Upload them with ⬆ Upload effects.</div>';
@@ -214,6 +283,14 @@ export function renderSfx(r) {
     box.innerHTML = H;
   }
   box.querySelectorAll("[data-fx]").forEach((b) => (b.onclick = () => playSfx(b.dataset.fx)));
+  box.querySelectorAll("[data-fxk]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        assigning = assigning === b.dataset.fxk ? "" : b.dataset.fxk;
+        fxMsg = assigning ? "Press the key for this effect now (Esc = no shortcut)." : "";
+        renderSfx(r);
+      }),
+  );
   box.querySelectorAll("[data-fxdel]").forEach(
     (b) =>
       (b.onclick = () => {
